@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "pgbouncer",
+    "port": 6432,
+    "tags": ["postgres"],
+    "check": {
+      "tcp": "localhost:6432",
+      "interval": "5s"
+    }
+  }
+}

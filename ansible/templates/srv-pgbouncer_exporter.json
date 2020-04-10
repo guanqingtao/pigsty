@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "pgbouncer_exporter",
+    "port": 9631,
+    "tags": ["exporter"],
+    "check": {
+      "http": "http://localhost:9631/",
+      "interval": "5s"
+    }
+  }
+}

@@ -1,0 +1,117 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   ha-retarget.yml
+# Mtime     :   2020-03-29
+# Desc      :   change replication source for given target
+# Path      :   playbooks/ha-retarget.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'cluster'
+#
+# Variables :
+#  source   : which instance to change
+#  target   : which instance to replicating from
+#==============================================================#
+
+- name: Retarget replication source
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  # retarget required variable: target (which standby), source (repl from where)
+  hosts: cluster
+  tasks:
+
+    - name: Check parameters source and target
+      tags: [check]
+      action: ping
+      when: target is defined and source is defined
+
+    - name: Check source and target both in cluster
+      tags: [check]
+      shell: "echo 'source or target not in cluster inventory' && exit 1"
+      when: source not in hostvars or target not in hostvars
+
+    - name: Check connectivity
+      tags: [check]
+      action: ping
+      when: inventory_hostname == target or inventory_hostname == source
+
+    - name: Get hostname
+      tags: [check]
+      shell: echo -n $HOSTNAME
+      register: hostname
+
+    - name: Register instance_name variable
+      tags: [check]
+      set_fact:
+        instance_name: "{{ hostname.stdout }}"
+
+    - name: Check source to target connectivity
+      tags: [check]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        psql "postgres://{{ repl_user | default('replicator') }}:{{ repl_pass | default('replicator') }}@{{ source }}:5432/postgres" -Atc 'SELECT 1;'
+      when: inventory_hostname == target
+
+    - name: Pause WAL replay to make sure LSN is behind target
+      tags: [pause]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: psql -c 'SELECT pg_wal_replay_pause();'
+      when: inventory_hostname == target
+
+    - name: Setup standby streaming source
+      tags: [conf]
+      lineinfile:
+        path: /pg/data/postgresql.auto.conf
+        regexp: "^primary_conninfo"
+        line: "primary_conninfo = 'host=''{{ source }}'' port=5432  application_name=''{{ instance_name }}'' user={{ repl_user | default('replicator') }} passfile=''/home/postgres/.pgpass'''"
+        owner: postgres
+        group: postgres
+        mode: 0600
+      when: inventory_hostname == target
+
+
+    # [launch] postgresql service
+    - name: Launch PostgreSQL service
+      tags: [launch]
+      systemd:
+        name: postgresql
+        state: restarted
+        enabled: yes
+      when: inventory_hostname == target
+
+    # [validate]
+    - name: Check Postgres
+      tags: [validate]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        psql "postgres://{{ biz_user | default(cluster) }}:{{ biz_pass | default(cluster) }}@:/{{ biz_db | default(cluster) }}" -Atc 'SELECT 1;'
+      when: inventory_hostname == target
+
+    - name: Resume WAL replay
+      tags: [resume]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: psql -c 'SELECT pg_wal_replay_resume();'
+      when: inventory_hostname == target
+
+    - name: Validate replication source is changed
+      tags: [validate]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        [[ $(psql -Atc "SELECT conninfo ~ '{{ source }}' FROM pg_stat_wal_receiver;") == t ]]
+      when: inventory_hostname == target

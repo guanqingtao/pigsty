@@ -1,0 +1,63 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   ha-choose.yml
+# Mtime     :   2020-03-31
+# Desc      :   find candidate leader from standbys among cluster
+# Path      :   playbooks/ha-choose.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'standby'
+#==============================================================#
+# choose new leader among all standby servers (which has the minimum replication lag)
+- name: Choose new leader
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  # choose will work among standby instance
+  hosts: standby
+  tasks:
+
+    # precheck
+    - name: Check cluster variable
+      tags: [check]
+      shell: "echo 'cluster and version are required for init procedure' && exit 1"
+      when: cluster is not defined or version is not defined
+
+    - name: Check postgres alive and in recovery
+      tags: [check]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        [[ $(psql -Atc "SELECT pg_is_in_recovery();") == t ]]
+
+    - name: Fetch LSN from each standby
+      tags: [check]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        psql -Atc "SELECT pg_last_wal_replay_lsn() - '0/0';"
+      register: lsn_result
+
+    - name: Register lsn
+      tags: [check]
+      set_fact:
+        lsn: "{{ lsn_result.stdout }}"
+
+    # find candidate primary from standby with the highest lsn value
+    - name: Find host with max lsn
+      set_fact: candidate={{ groups['standby'] | sort('lsn' | int) | last }}
+    # - name: Find max lsn
+    #   set_fact: lsn_max={{ hostvars[new_leader]['lsn'] }}
+
+    - name: Announce new leader candidate {{ candidate }}
+      shell: "echo {{ candidate }}"
+      when: inventory_hostname == candidate
+
+    # TODO: use the candidate to retarget cluster members and promote

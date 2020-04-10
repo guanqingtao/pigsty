@@ -1,0 +1,21 @@
+#!/usr/bin/ansible-playbook
+---
+
+- import_playbook: init-node.yml
+  tags: node
+
+- import_playbook: init-postgres.yml
+  tags: postgres
+  vars:
+    force: true
+
+- import_playbook: init-patroni.yml
+  tags: init
+  vars:
+    force: true
+    
+- import_playbook: init-pgbouncer.yml
+  tags: pgbouncer
+
+- import_playbook: init-monitor.yml
+  tags: monitor

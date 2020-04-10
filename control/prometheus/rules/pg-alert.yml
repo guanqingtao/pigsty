@@ -1,0 +1,231 @@
+groups:
+  - name: pg-alert
+    rules:
+      # ALIVENESS ALERTS (ERROR)
+      # primary|primary ins down for 10s triggers a P0 alert
+      - alert: PG_PRIMARY_DOWN
+        expr: pg_up{role="primary"} == 0
+        for: 10s
+        labels:
+          team: DBA
+          urgency: P0
+        annotations:
+          summary: "P0 Postgres Primary Instance Down: {{$labels.ins}}"
+          description: "pg_up = {{ $value }} {{$labels.ins}}"
+
+      # standby|standby ins down for 10s triggers a P1 alert
+      - alert: PG_STANDBY_DOWN
+        expr: pg_up{role!="primary"} == 0
+        for: 10s
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres Standby Instance Down: {{$labels.ins}}"
+          description: "pg_up = {{ $value }} {{$labels.ins}}"
+
+      # primary pgbouncer down for 10s triggers a P0 alert
+      - alert: PGB_PRIMARY_DOWN
+        expr: pgbouncer_up{role="primary"} == 0
+        for: 10s
+        labels:
+          team: DBA
+          urgency: P0
+        annotations:
+          summary: "P0 Pgbouncer Primary Instance Down: {{$labels.ins}}"
+          description: "pgbouncer_up = {{ $value }} {{$labels.ins}}"
+
+      # standby pgbouncer down for 10s triggers a P1 alert
+      - alert: PGB_STANDBY_DOWN
+        expr: pgbouncer_up{role!="primary"} == 0
+        for: 10s
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Pgbouncer Standby Instance Down: {{$labels.ins}}"
+          description: "pgbouncer_up = {{ $value }} {{$labels.ins}}"
+
+      # exporter down for 1m triggers a P1 alert
+      - alert: PG_EXPORTER_DOWN
+        expr: up{instance=~"^.*:(9100|9630|9631)$"} == 0
+        for: 10s
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Exporter Down: {{$labels.ins}} {{$labels.port}}"
+          description: "port = {{$labels.port}}, {{$labels.ins}}"
+
+
+      # DELAY ALERTS
+      # replication break for 1m triggers a P0 alert. auto-resolved after 10 minutes.
+      - alert: PG_REPLICATION_BREAK
+        expr: pg_repl_state_count{state="streaming"} - (pg_repl_state_count{state="streaming"} OFFSET 10m) < 0
+        for: 1m
+        labels:
+          team: DBA
+          urgency: P0
+        annotations:
+          summary: "P0 Postgres Streaming Replication Break: {{$labels.ins}}"
+          description: "delta = {{ $value }} {{$labels.ins}}"
+
+      # replication lag greater than 8 second for 3m triggers a P1 alert
+      - alert: PG_REPLICATION_LAG
+        expr: pg_repl_replay_lag{} > 8
+        for: 3m
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres Replication Lagged: {{$labels.ins}}"
+          description: "lag = {{ $value }} seconds, {{$labels.ins}}"
+
+      # replication diff greater than 32MB for 5m triggers a P2 alert
+      - alert: PG_REPLICATOIN_DIFF
+        expr: pg_repl_lsn{} - pg_repl_replay_lsn{} > 33554432
+        for: 5m
+        labels:
+          team: DBA
+          urgency: P2
+        annotations:
+          summary: "P2 Postgres Replication Diff Deviant: {{$labels.ins}}"
+          description: "delta = {{ $value }} {{$labels.ins}}"
+
+
+      # SATURATION ALERTS
+
+      # avg CPU usage > 90% for 1m
+      - alert: PG_CPU_CRIT
+        expr: node:ins:cpu_usage > 0.9
+        for: 1m
+        labels:
+          team: DBA
+          urgency: P0
+        annotations:
+          summary: "P0 Postgres CPU Critical: {{$labels.ins}}"
+          description: "Avg Usage = {{ $value }} {{$labels.ins}}"
+
+      # avg CPU usage > 70% for 1m
+      - alert: PG_CPU_HIGH
+        expr: node:ins:cpu_usage > 0.7
+        for: 3m
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres CPU High: {{$labels.ins}}"
+          description: "Avg Usage = {{ $value }} {{$labels.ins}}"
+
+      # avg CPU usage > 50% for 3m
+      - alert: PG_CPU_WARN
+        expr: node:ins:cpu_usage > 0.5
+        for: 5m
+        labels:
+          team: DBA
+          urgency: P2
+        annotations:
+          summary: "P2 Postgres CPU Warn: {{$labels.ins}}"
+          description: "Avg Usage = {{ $value }} {{$labels.ins}}"
+
+      # 8 waiting clients for 1m triggers a P0 alert
+      - alert: PGB_QUEUING
+        expr: sum(pgbouncer_pool_waiting_clients{datname!="pgbouncer"}) by (ins,datname) > 8
+        for: 1m
+        labels:
+          team: DBA
+          urgency: P0
+        annotations:
+          summary: "P0 Pgbouncer Queuing {{ $value }} : {{$labels.ins}}"
+          description: "waiting clients = {{ $value }} {{$labels.ins}}"
+
+
+      # num of backend exceed 90 for 3m
+      - alert: PG_BACKEND_HIGH
+        expr: sum(pg_db_numbackends{}) by (ins) > 32
+        for: 3m
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres Backend Number High: {{$labels.ins}}"
+          description: "numbackend = {{ $value }} {{$labels.ins}}"
+
+      # num of backend exceed 80 for 10m (avoid pgbouncer jam false alert)
+      - alert: PG_BACKEND_WARN
+        expr: sum(pg_db_numbackends{}) by (ins) > 16
+        for: 10m
+        labels:
+          team: DBA
+          urgency: P2
+        annotations:
+          summary: "P2 Postgres Backend Number Warn: {{$labels.ins}}"
+          description: "numbackend = {{ $value }} {{$labels.ins}}"
+
+      # max idle xact duration exceed 3m
+      - alert: PG_IDLE_XACT
+        expr: pg_activity_max_duration{role!="offline", state=~"^idle in transaction.*"} > 180
+        for: 3m
+        labels:
+          team: DBA
+          urgency: P2
+        annotations:
+          summary: "P2 Postgres Long Idle Transaction: {{$labels.ins}}"
+          description: "duration = {{ $value }} {{$labels.ins}}"
+
+      # age wrap around (progress in half 10Y) triggers a P1 alert
+      - alert: PG_AGE_HIGH
+        expr: pg_database_age{} > 1000000000
+        for: 1m
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres XID Wrap Around: {{$labels.ins}}"
+          description: "age = {{ $value }} {{$labels.ins}}"
+
+      # age wrap around (progress in half 10Y) triggers a P1 alert
+      - alert: PG_AGE_WARN
+        expr: pg_database_age{} > 300000000
+        for: 3m
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres Age Warn: {{$labels.ins}}"
+          description: "age = {{ $value }} {{$labels.ins}}"
+
+      # TRAFFIC ALERTS
+      # more than 30k TPS lasts for 1m triggers a P1 (pgbouncer bottleneck)
+      - alert: PG_TPS_HIGH
+        expr: rate(pg_db_xact_total{}[1m]) > 30000
+        for: 1m
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres TPS High: {{$labels.ins}} {{$labels.datname}}"
+          description: "TPS = {{ $value }} {{$labels.ins}}"
+
+      # more than 24k TPS lasts for 3m triggers a P2
+      - alert: PG_TPS_WARN
+        expr: rate(pg_db_xact_total{}[1m]) > 200
+        for: 3m
+        labels:
+          team: DBA
+          urgency: P2
+        annotations:
+          summary: "P2 Postgres TPS Warning: {{$labels.ins}} {{$labels.datname}}"
+          description: "TPS = {{ $value }} {{$labels.ins}}"
+
+      # more than 4 rollback per seconds lasts for 5m
+      - alert: PG_ROLLBACK_WARN
+        expr: rate(pg_db_xact_rollback{}[1m]) > 4
+        for: 5m
+        labels:
+          team: DBA
+          urgency: P3
+        annotations:
+          summary: "P3 Postgres Rollback Warning: {{$labels.ins}}"
+          description: "rollback per sec = {{ $value }} {{$labels.ins}}"
+

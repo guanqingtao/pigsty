@@ -1,0 +1,147 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   ha-promote.yml
+# Mtime     :   2020-04-01
+# Desc      :   promote candidate server
+# Path      :   playbooks/ha-promote.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+# Note      :
+#     the candidate will get a new identity according to naming
+#  convention <timeline>.primary.<cluster>. The change must be
+#  published to related services: monitoring, LB, proxy, DNS, VIP
+#==============================================================#
+# Hosts :
+#   works on group 'cluster'
+#
+# Variables :
+#  candidate   : which instance to promote (must in cluster)
+#==============================================================#
+- name: Retarget replication source
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  # required variable: target (which standby), source (repl from where)
+  hosts: cluster
+  tasks:
+    # [check] precondition
+    - name: Check parameter candidate
+      tags: [check]
+      action: ping
+      when: candidate is defined
+
+    - name: Check connectivity
+      tags: [check]
+      action: ping
+      when: inventory_hostname == candidate
+
+    # [promote] candidate
+    - name: Promote candidate server
+      tags: [promote]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        /usr/pgsql/bin/pg_ctl -w -t 300 -D /pg/data promote
+      when: inventory_hostname == candidate
+
+
+    # [validate] candidate is promoted
+    - name: Validate candiate is promoted
+      tags: [validate]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        [[ $(psql -Atc "SELECT pg_is_in_recovery();") == f ]]
+      when: inventory_hostname == candidate
+
+
+
+    # [identity] record old domain and make new identity
+    - name: Get hostname
+      tags: [identity]
+      shell: echo -n $HOSTNAME
+      register: hostname
+      when: inventory_hostname == candidate
+
+    - name: Register old_instance_name from hostname
+      tags: [setup]
+      set_fact:
+        old_instance_name: "{{ hostname.stdout }}"
+      when: inventory_hostname == candidate
+
+    - name: Get timeline
+      tags: [identity]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        /usr/pgsql/bin/pg_controldata -D /pg/data | grep TimeLineID | grep -v Prev | awk '{print $4}'
+      register: timeline_result
+      when: inventory_hostname == candidate
+
+    # [identity] instance
+    - name: Set instance_role
+      tags: [identity]
+      set_fact: instance_role="primary"
+      when: inventory_hostname == candidate
+
+    # newly inited primary will always have timeline = 1
+    - name: Set instance_timeline
+      tags: [identity]
+      set_fact: instance_timeline={{ timeline_result.stdout }}
+      when: inventory_hostname == candidate
+
+    # for primary the sequence is equal to timeline
+    - name: Set instance_sequence
+      tags: [identity]
+      set_fact: instance_sequence={{ instance_timeline | int }}
+      when: inventory_hostname == candidate
+
+    # the final identifier for an instance is consist of three parts
+    - name: Set instance_name {{ instance_sequence }}.{{ instance_role }}.{{ cluster }} Old name is {{ old_instance_name }}
+      tags: [identity]
+      set_fact: instance_name="{{ instance_sequence }}.{{ instance_role }}.{{ cluster }}"
+      when: inventory_hostname == candidate
+
+    # [consul] change consul instance meta to enable new identity
+    - name: Copy consul-instance-meta.json
+      tags: [identity]
+      template:
+        src: "templates/consul-instance-meta.json.j2"
+        dest: /etc/consul.d/instance-meta.json
+        owner: consul
+        group: consul
+        mode: 0600
+      when: inventory_hostname == candidate
+
+    - name: Register postgresql service
+      tags: [identity]
+      copy:
+        content: |
+          {"service": {"name":"postgresql", "port": 5432, "tags":["postgres"]}}
+        dest: /etc/consul.d/postgresql.json
+        owner: consul
+        group: consul
+        mode: 0600
+      when: inventory_hostname == candidate
+
+    - name: Restart consul to reload node meta
+      tags: [identity]
+      systemd:
+        name: consul
+        state: restarted
+        enabled: yes
+      when: inventory_hostname == candidate
+
+
+    # register instance to hostname since there will be only one instance per node
+    - name: Setup hostname
+      tags: [identity]
+      hostname:
+        name: "{{ instance_name }}"
+    # TODO: boardcast primary change event or invoke related scripts (switch proxy, DNS, LB)

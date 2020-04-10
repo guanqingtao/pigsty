@@ -1,0 +1,332 @@
+#!/usr/bin/ansible-playbook
+#==============================================================#
+# File      :   init-primary.yml
+# Mtime     :   2020-04-09
+# Desc      :   init cluster primary instances manually
+# Path      :   playbooks/init-primary.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+
+################################################################
+# Postgres Scripts:  Init Cluster Primary
+# Hosts :
+# This scripts require an inventory host group named 'cluster'
+# contains one and only one host with instance_variable role='primary'
+#
+# Variables :
+#  force:  cleanup even previous postgres instance exists
+#  pgconf: path to your own postgresql.conf
+#  pghba: path to your own pg_hba.conf
+#
+#  cluster version : same as init-postgres.yml
+#  initdb_opts:  additional opts to initdb: '--encoding=UTF8 --locale=C --data-checksum' by default
+#  biz_db : business database name to be inited, 'testdb' by default
+#  repl_user  =  replicator
+#  repl_pass  =  replicator
+#  mon_user   =  dbuser_monitor
+#  mon_pass   =  dbuser_monitor
+#  biz_user   =  dbuser_test
+#  biz_pass   =  dbuser_test
+################################################################
+---
+
+################################################################
+# PLAY 0: Check Inventory and build groups
+################################################################
+- name: Check Inventory
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  become: yes
+  become_method: sudo
+
+  # local action: check inventory and build group 'primary'
+  hosts: cluster
+  tasks:
+    ################################################################
+    # PHASE 0: [check] local inventory precondition
+    ################################################################
+    - name: Check cluster and version variable
+      tags: [check]
+      shell: "echo 'variable <cluster> and <version> are required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: cluster is not defined or version is not defined
+
+    # seq is cluster-wide unique incremental integer sequence to distinguish instances
+    - name: Check instance variable
+      tags: [check]
+      shell: "echo 'instance variable <seq> is required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: seq is not defined
+
+    # primary instance must be explicitly specified via role=primary
+    - name: Build primary group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: primary
+        role: primary
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role is defined and role == 'primary'
+
+    # standby is the default role if role is not set
+    - name: Build standby group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: standby
+        role: standby
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role is not defined or role == 'standby'
+
+    # offline must be specified explicitly too
+    - name: Build offline group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: offline
+        role: offline
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role == 'offline'
+
+    - name: Check primary singleton
+      tags: [check]
+      shell: "echo 'cluster count(primary) != 1: {{ groups.primary }}' && exit 1"
+      delegate_to: localhost
+      when: groups.primary | length != 1
+
+
+
+################################################################
+# PLAY 1: Init cluster primary
+################################################################
+- name: Init Cluster Primary
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  # works on dynamic built group 'primary'
+  hosts: primary
+  tasks:
+    ################################################################
+    # PHASE 1-2: [check] primary instance precondition
+    ################################################################
+    - name: Check node connectivity
+      tags: [check]
+      action: ping
+
+    - name: Check postgres is installed with version {{ version }}
+      tags: [check]
+      shell: "[[ $(/usr/pgsql/bin/pg_ctl --version) == 'pg_ctl (PostgreSQL) {{ version }}'* ]]"
+
+    # this checking task is skipped if force id defined (via -e force=on)
+    # otherwise, abort execution if postgres is running
+    - name: Check primary not running (set force=on to skip)
+      tags: [check]
+      shell: "ps aux | grep -v grep | grep -- '-D /pg/data' | grep pgsql || exit 0 && exit 1"
+      when: force is not defined
+
+    ################################################################
+    # PHASE 2: [clean] existing stuff
+    ################################################################
+    - name: Stop running postgresql service
+      tags: [clean]
+      systemd:
+        name: postgresql
+        state: stopped
+        enabled: no
+
+    - name: Stop running postgres manully if still exist
+      tags: [clean]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        pg_exist=$(ps aux | grep -v grep | grep -- '-D /pg/data' | grep pgsql | wc -l)
+        if (( $pg_exist==1 )); then
+            /usr/pgsql/bin/pg_ctl -D /pg/data stop
+        fi
+
+    - name: Remove existing /pg/data directory
+      tags: [clean]
+      file:
+        path: /pg/data
+        state: absent
+
+    - name: Recreate /pg/data directory
+      tags: [clean]
+      file:
+        path: /pg/data
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+
+    ################################################################
+    # PHASE 3: [initdb] create database cluster
+    ################################################################
+    # [init] database cluster
+    - name: Init database cluster {{ cluster }} with version={{ version }}
+      tags: [initdb]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: "/usr/pgsql/bin/initdb -D /pg/data {{ initdb_opts | default('--encoding=UTF8 --locale=C --data-checksum') }}"
+
+
+
+    ################################################################
+    # PHASE 4: [config] postgres
+    ################################################################
+    # rename default postgresql.conf to postgresql.base.conf
+    - name: Rename default PostgreSQL conf
+      tags: [config]
+      shell: mv -f /pg/data/postgresql.conf /pg/data/postgresql.base.conf
+
+    - name: Fetch default postgresql.conf for version-{{ version }}
+      tags: [config]
+      set_fact: default_postgresql_conf="templates/postgresql-{{ version }}.conf.j2"
+
+    - name: Fetch default pg_hba.conf for primary
+      tags: [config]
+      set_fact: default_hba_conf="templates/pg_hba-primary.conf.j2"
+
+    # use custome postgresql.conf via ( -e pgconf=/path/to/postgresql.conf )
+    - name: Setup postgresql.conf
+      tags: [config]
+      template:
+        src: "{{ pgconf | default(default_postgresql_conf) }}"
+        dest: /pg/data/postgresql.conf
+        owner: postgres
+        group: postgres
+        mode: 0600
+
+    # use custome pg_hba.conf via ( -e pghba=/path/to/pg_hba.conf )
+    - name: Setup pg_hba.conf
+      tags: [config]
+      template:
+        src: "{{ pghba | default(default_hba_conf) }}"
+        dest: /pg/data/pg_hba.conf
+        owner: postgres
+        group: postgres
+        mode: 0600
+
+    # create pgpass for repl_user, mon_user, biz_user
+    - name: Create pgpass
+      tags: [config]
+      copy:
+        content: |
+          *:*:*:{{ repl_user | default('replicator') }}:{{ repl_pass | default('replicator') }}
+          *:*:*:{{ mon_user | default('dbuser_monitor') }}:{{ mon_pass | default('dbuser_monitor') }}
+          *:*:{{ biz_db | default(cluster) }}:{{ biz_user | default(cluster) }}:{{ biz_pass | default(cluster) }}
+          # postgres://{{ repl_user | default('replicator') }}:{{ repl_pass | default('replicator') }}@:/postgres
+          # postgres://{{ mon_user | default('dbuser_monitor') }}:{{ mon_pass | default('dbuser_monitor') }}@:/postgres
+          # postgres://{{ biz_user | default(cluster) }}:{{ biz_pass | default(cluster) }}@:/{{ biz_db | default(cluster) }}
+        dest: /home/postgres/.pgpass
+        owner: postgres
+        group: postgres
+        mode: 0600
+
+
+
+    ################################################################
+    # PHASE 5: [launch] postgresql service
+    ################################################################
+    - name: Launch PostgreSQL service
+      tags: [launch]
+      systemd:
+        name: postgresql
+        state: restarted
+        enabled: yes
+
+    - name: Check Postgres launch success
+      tags: [launch]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: /usr/pgsql/bin/pg_isready
+
+
+
+    ################################################################
+    # PHASE 6: [bootstrap] postgres database
+    ################################################################
+    # [bootstrap] with default roles, users, business databases
+    - name: Render initdb scripts
+      tags: [bootstrap]
+      template:
+        src: "templates/initdb.sh.j2"
+        dest: "/pg/bin/initdb.sh"
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+    - name: Execute initdb scripts
+      tags: [bootstrap]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: /pg/bin/initdb.sh
+
+    - name: Check replicator connectivity
+      tags: [bootstrap]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        psql "postgres://{{ repl_user | default('replicator') }}:{{ repl_pass | default('replicator') }}@localhost:5432/postgres" -Atc 'SELECT 1;'
+
+    - name: Check business user and database available
+      tags: [bootstrap]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        psql "postgres://{{ biz_user | default(cluster) }}:{{ biz_pass | default(cluster) }}@localhost:5432/{{ biz_db | default(cluster) }}" -Atc 'SELECT 1;'
+
+
+
+    ################################################################
+    # PHASE 7: [register] primary postgres service to DCS
+    ################################################################
+    - name: Register primary postgres service
+      tags: [register]
+      copy:
+        src: templates/srv-postgres.json
+        dest: /etc/consul.d/srv-postgres.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register primary.{{ cluster }} service
+      tags: [register]
+      template:
+        src: templates/srv-cluster-primary.json
+        dest: /etc/consul.d/srv-{{ cluster }}.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register node-meta role=primary
+      tags: [register]
+      copy:
+        content: |
+          {"node_meta": {"role":"primary"}}
+        dest: /etc/consul.d/meta-role.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    # change node-meta require restart to take effect immediately
+    - name: Restarted consul
+      tags: [register]
+      systemd:
+        name: consul
+        state: restarted
+        enabled: yes

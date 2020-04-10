@@ -1,0 +1,175 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   init-monitor.yml
+# Mtime     :   2020-03-29
+# Desc      :   init monitor for postgres and pgbouncer
+# Path      :   playbooks/init-monitor.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'cluster'
+#
+# Variables :
+#  biz_db : business database name to be inited, 'testdb' by default
+#  mon_user   =  dbuser_monitor
+#  mon_pass   =  dbuser_monitor
+#==============================================================#
+
+- name: Init Cluster Monitor
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  hosts: cluster
+  tasks:
+
+    ################################################################
+    # PHASE 0: [check] cluster
+    ################################################################
+    # [check] precondition
+    - name: Check cluster variable
+      tags: [check]
+      shell: "echo 'cluster and version are required for init procedure' && exit 1"
+      when: cluster is not defined or version is not defined
+
+
+
+    ################################################################
+    # PHASE 1-1: [config] pg_exporter
+    ################################################################
+    - name: Config pg_exporter with /etc/default/pg_exporter
+      tags: [config]
+      copy:
+        content: |
+          PG_EXPORTER_URL='postgres://{{ mon_user | default('dbuser_monitor') }}:{{ mon_pass | default('dbuser_monitor') }}@:5432/{{ biz_db }}?host=/var/run/postgresql&sslmode=disable'
+          PG_EXPORTER_CONFIG=/etc/pg_exporter
+          PG_EXPORTER_LISTEN_ADDRESS=":9630"
+          PG_EXPORTER_TELEMETRY_PATH="/metrics"
+          PG_EXPORTER_DISABLE_CACHE=true
+          PG_EXPORTER_OPTS='--log.level=info --log.format="logger:syslog?appname=prometheus&local=7"'
+        dest: /etc/default/pg_exporter
+        owner: postgres
+        group: postgres
+        mode: 0600
+
+    - name: Use self-defined pg_exporter.yaml
+      tags: [config]
+      copy:
+        src: templates/pg_exporter.yaml.j2
+        dest: /etc/pg_exporter/pg_exporter.yaml
+        owner: root
+        group: root
+        mode: 0644
+
+
+    - name: Create pg_exporter service
+      tags: [config]
+      copy:
+        content: |
+          [Unit]
+          Description=Prometheus exporter for PostgreSQL/Pgbouncer server metrics
+          Documentation=https://github.com/Vonng/pg_exporter
+          After=network.target
+
+          [Service]
+          EnvironmentFile=-/etc/default/pg_exporter
+          User=prometheus
+          ExecStart=/usr/bin/pg_exporter $PG_EXPORTER_OPTS
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /usr/lib/systemd/system/pg_exporter.service
+        owner: root
+        group: root
+        mode: 0644
+
+
+    ################################################################
+    # PHASE 1-2: [config] pgbouncer_exporter
+    ################################################################
+    - name: Config pgbouncer_exporter with /etc/default/pgbouncer_exporter
+      tags: [config]
+      copy:
+        content: |
+          PG_EXPORTER_URL='postgres://{{ mon_user | default('dbuser_monitor') }}:{{ mon_pass | default('dbuser_monitor') }}@localhost:6432/pgbouncer?host=/var/run/postgresql&sslmode=disable'
+          PG_EXPORTER_CONFIG=/etc/pg_exporter
+          PG_EXPORTER_LISTEN_ADDRESS=":9631"
+          PG_EXPORTER_TELEMETRY_PATH="/metrics"
+          PG_EXPORTER_DISABLE_CACHE=true
+          PG_EXPORTER_OPTS='--log.level=info --log.format="logger:syslog?appname=prometheus&local=7"'
+        dest: /etc/default/pgbouncer_exporter
+        owner: postgres
+        group: postgres
+        mode: 0600
+
+    - name: Create pgbouncer_exporter service
+      tags: [config]
+      copy:
+        content: |
+          [Unit]
+          Description=Prometheus exporter for PostgreSQL/Pgbouncer server metrics
+          Documentation=https://github.com/Vonng/pg_exporter
+          After=network.target
+
+          [Service]
+          EnvironmentFile=-/etc/default/pgbouncer_exporter
+          User=prometheus
+          ExecStart=/usr/bin/pg_exporter $PG_EXPORTER_OPTS
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /usr/lib/systemd/system/pgbouncer_exporter.service
+        owner: root
+        group: root
+        mode: 0644
+
+
+
+    ################################################################
+    # PHASE 2: [launch] pg_exporter and pgbouncer_exporter
+    ################################################################
+    # [launch] pg_exporter pgbouncer_exporter consul service
+    - name: Launch monitor service
+      tags: [launch]
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: yes
+      with_items:
+        - pg_exporter
+        - pgbouncer_exporter
+
+
+
+    ################################################################
+    # PHASE 3: [register] pg_exporter and pgbouncer_exporter
+    ################################################################
+    - name: Register pg_exporter service
+      tags: [standby]
+      copy:
+        src: templates/srv-pg_exporter.json
+        dest: /etc/consul.d/srv-pg_exporter.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register pgbouncer_exporter service
+      tags: [standby]
+      copy:
+        src: templates/srv-pgbouncer_exporter.json
+        dest: /etc/consul.d/srv-pgbouncer_exporter.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Reload consul
+      tags: [register]
+      systemd:
+        name: consul
+        state: reloaded
+        enabled: yes

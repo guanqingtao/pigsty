@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "pg_exporter",
+    "port": 9630,
+    "tags": ["exporter"],
+    "check": {
+      "http": "http://localhost:9630/",
+      "interval": "5s"
+    }
+  }
+}

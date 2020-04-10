@@ -1,0 +1,6 @@
+control/yum/
+temp/
+tmp/
+.idea/
+.vagrant/
+.DS_Store

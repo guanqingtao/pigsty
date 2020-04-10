@@ -1,0 +1,92 @@
+groups:
+
+  - name: pg_rules
+    rules:
+
+      # node_exporter
+      - record: node:cpu:cpu_usage
+        expr: sum without (mode) (1 - irate(node_cpu_seconds_total{mode="idle"}[1m]))
+
+      - record: node:instance:cpu_count
+        expr: count without (cpu, mode) (node_cpu_seconds_total{mode="idle"})
+
+      - record: node:instance:cpu_usage
+        expr: node:cpu:cpu_usage / ignoring(cpu) node:instance:cpu_count
+
+      - record: node:instance:mem_usage
+        expr: 1 - node_memory_MemFree_bytes{} / node_memory_MemTotal_bytes{}
+
+      - record: node:instance:swap_usage
+        expr: 1 - node_memory_SwapFree_bytes{} / node_memory_SwapTotal_bytes{}
+
+      - record: node:instance:disk_usage
+        expr: 1 - min without (device,fstype) (node_filesystem_free_bytes{} / node_filesystem_size_bytes{})
+
+      - record: node:instance:disk_read
+        expr: irate(node_disk_read_bytes_total{}[1m])
+
+      - record: node:instance:disk_write
+        expr: irate(node_disk_written_bytes_total{}[1m])
+
+      - record: node:instance:network_transmit
+        expr: irate(node_network_transmit_bytes_total{}[1m])
+
+      - record: node:instance:network_receive
+        expr: irate(node_network_receive_bytes_total{}[1m])
+
+      - record: node:instance:tcp_retrans
+        expr: rate(node_netstat_Tcp_RetransSegs{}[1m]) / (rate(node_netstat_Tcp_InSegs{}[1m]) + rate(node_netstat_Tcp_OutSegs{}[1m]))
+
+
+      # pg_exporter
+      - record: pg:instance:status
+        expr: (pg_up{} * 2) +  (1 - pg_in_recovery{})
+
+      # application_name must set to standby instance name
+      - record: pg:instance:sync_status
+        expr: max by (ins,cls) (label_replace(pg_repl_sync_status, "ins", "$1", "application_name", "(.+)"))
+      # application_name must set to standby instance name
+      - record: pg:instance:lag
+        expr: max by (ins,cls) (label_replace(pg_repl_lsn{} - pg_repl_replay_lsn{}, "ins", "$1", "application_name", "(.+)"))
+
+      - record: pg:instance:tps
+        expr: sum without (datname) (rate(pg_db_xact_total{}[1m]))
+
+      - record: pgb:instance:qps
+        expr: sum without (datname)  (rate(pgbouncer_stat_total_query_count{}[1m]))
+
+      - record: pg:instance:rollbacks
+        expr: sum without (datname)  (rate(pg_db_xact_rollback{}[1m]))
+
+      - record: pgb:instance:rt
+        expr: sum without (datname) (increase(pgbouncer_stat_total_query_time{}[1m]) / increase(pgbouncer_stat_total_query_count{}[1m]) / 1000)
+
+      - record: pg:instance:wal_rate
+        expr: sum without (datname) (rate(pg_lsn{}[1m]))
+
+      - record: pg:instance:age
+        expr: max without (datname) (pg_database_age{})
+
+      - record: pg:instance:numbackends
+        expr: sum without (datname) (pg_db_numbackends{})
+
+      - record: pg:instance:active_servers
+        expr: sum without (datname) (pg_activity_count{state="active"})
+
+      - record: pg:instance:idle_xact_counts
+        expr: sum without (datname) (pg_activity_count{state=~"idle in transaction.*"})
+
+      - record: pgb:instance:active_servers
+        expr: sum without (datname) (pgbouncer_pool_active_servers{})
+
+      - record: pgb:instance:active_clients
+        expr: sum without (datname) (pgbouncer_pool_active_servers{})
+
+      - record: pgb:instance:waiting_clients
+        expr: sum without (datname) (pgbouncer_pool_waiting_clients{})
+
+      - record: pg:cluster:partitions
+        expr: count by (cls) (pg:instance:status{} == 3)
+
+      - record: pg:cluster:size
+        expr: count by (cls) (pg_up{}==1)

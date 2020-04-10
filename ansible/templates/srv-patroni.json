@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "patroni",
+    "port": 8008,
+    "tags": ["patroni"],
+    "check": {
+      "tcp": "{{ inventory_hostname }}:8008",
+      "interval": "5s"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "consul",
+    "port": 8500,
+    "tags": ["consul"],
+    "check": {
+      "http": "http://localhost:8500/",
+      "interval": "5s"
+    }
+  }
+}

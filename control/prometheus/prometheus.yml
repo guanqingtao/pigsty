@@ -1,0 +1,75 @@
+global:
+  scrape_interval: 3s
+  evaluation_interval: 3s
+  scrape_timeout: 2s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - localhost:9093
+      scheme: http
+      timeout: 10s
+      api_version: v1
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  - job_name: alertmanager
+    static_configs:
+      - targets:
+          - localhost:9093
+
+  - job_name: grafana
+    static_configs:
+      - targets:
+          - localhost:3000
+
+  - job_name: pg
+    # https://prometheus.io/docs/prometheus/latest/configuration/configuration/#consul_sd_config
+    consul_sd_configs:
+      - server: 'localhost:8500'
+        refresh_interval: 5s
+        tags: [exporter]
+
+    # https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+    relabel_configs:
+      # allowed role for postgres
+      - source_labels: [__meta_consul_metadata_role]
+        regex: '^(primary|standby|offline)$'
+        action: keep
+
+      # label ip address
+      - source_labels: [__meta_consul_address]
+        action: replace
+        target_label: ip
+
+      # label instance
+      - source_labels: [__meta_consul_metadata_role]
+        action: replace
+        target_label: role
+
+      # instance label: 1.testdb
+      - source_labels: [__meta_consul_node]
+        action: replace
+        target_label: ins
+
+      # service label:  primary.testdb
+      - source_labels: [__meta_consul_metadata_role, __meta_consul_node]
+        action: replace
+        regex: '^(primary|standby|offline);\d+\.(.*)$'
+        replacement: '${1}.${2}'
+        target_label: srv
+
+      # cluster label: testdb
+      - source_labels: [__meta_consul_node]
+        action: replace
+        regex: '^\d+\.(.*)$'
+        replacement: '${1}'
+        target_label: cls

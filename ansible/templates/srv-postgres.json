@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "postgres",
+    "port": 5432,
+    "tags": ["postgres"],
+    "check": {
+      "args": ["/usr/pgsql/bin/pg_isready"],
+      "interval": "5s"
+    }
+  }
+}

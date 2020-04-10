@@ -1,0 +1,402 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   init-patroni.yml
+# Mtime     :   2020-03-24
+# Desc      :   init patroni for postgres cluster
+#               install necessary packages, launch ntp patroni_exporter consul service
+# Path      :   playbooks/init-patroni.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'cluster' by default
+
+
+################################################################
+# PLAY 0: Check Inventory and build groups
+################################################################
+- name: Check Inventory
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  become: yes
+  become_method: sudo
+
+  # local action: check inventory and build groups: primary|standby|offline
+  hosts: cluster
+  tasks:
+    ################################################################
+    # PHASE 0: [check] local inventory precondition
+    ################################################################
+    - name: Check cluster and version variable
+      tags: [check]
+      shell: "echo 'variable <cluster> and <version> are required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: cluster is not defined or version is not defined
+
+    # seq is cluster-wide unique incremental integer sequence to distinguish instances
+    - name: Check instance variable
+      tags: [check]
+      shell: "echo 'instance variable <seq> is required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: seq is not defined
+
+    # primary instance must be explicitly specified via role=primary
+    - name: Build primary group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: primary
+        role: primary
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role is defined and role == 'primary'
+
+    # standby is the default role if role is not set
+    - name: Build standby group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: standby
+        role: standby
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role is not defined or role == 'standby'
+
+    # offline must be specified explicitly too
+    - name: Build offline group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: offline
+        role: offline
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role == 'offline'
+
+    - name: Check primary singleton
+      tags: [check]
+      shell: "echo 'cluster count(primary) != 1: {{ groups.primary }}' && exit 1"
+      delegate_to: localhost
+      when: groups.primary | length != 1
+
+    - name: Check connectivity
+      tags: [check]
+      action: ping
+
+
+################################################################
+# PLAY 1: Init cluster with patroni
+################################################################
+- name: Init Patroni
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  hosts: cluster
+  tasks:
+
+    ################################################################
+    # PHASE 1: [install] patroni from yum
+    ################################################################
+    - name: Install patroni from local yum
+      tags: [install]
+      yum:
+        name:
+          - patroni
+
+
+    ################################################################
+    # PHASE 2: [clean] patroni service
+    ################################################################
+    - name: Disable patroni services
+      tags: [clean]
+      ignore_errors: true
+      systemd:
+        name: patroni
+        state: stopped
+        enabled: no
+
+    - name: Stop running postgres manully if still exist
+      tags: [clean]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        pg_exist=$(ps aux | grep -v grep | grep -- '-D /pg/data' | grep pgsql | wc -l)
+        if (( $pg_exist==1 )); then
+            /usr/pgsql/bin/pg_ctl -D /pg/data stop
+        fi
+
+    - name: Remove consul metadata
+      tags: [clean]
+      ignore_errors: true
+      shell: |
+        consul kv delete -recurse /pg/{{ cluster }}
+
+    - name: Remove existing /pg/data directory
+      tags: [clean]
+      file:
+        path: /pg/data
+        state: absent
+
+    - name: Recreate /pg/data directory
+      tags: [clean]
+      file:
+        path: /pg/data
+        state: directory
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+
+    ################################################################
+    # PHASE 2: [config] patroni service
+    ################################################################
+    - name: Copy initdb scripts
+      tags: [config]
+      template:
+        src: "templates/initdb.sh.j2"
+        dest: "/pg/bin/initdb.sh"
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+    - name: Copy callback scripts
+      tags: [config]
+      template:
+        src: "templates/callback.sh"
+        dest: "/pg/bin/callback.sh"
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+    - name: Copy patroni conf
+      tags: [config]
+      template:
+        src: "templates/patroni.yml.j2"
+        dest: "/pg/conf/{{ instance_name }}.yml"
+        owner: postgres
+        group: postgres
+        mode: 0755
+
+    - name: Make an softlink to /pg/bin/patroni.yml
+      tags: [config]
+      shell: |
+        rm -rf /pg/bin/patroni.yml
+        ln -s /pg/conf/{{ instance_name }}.yml /pg/bin/patroni.yml
+
+    - name: Copy patroni service
+      tags: [config]
+      copy:
+        content: |
+          [Service]
+          Type=simple
+
+          User=postgres
+          Group=postgres
+
+          # Location of Patroni configuration
+          Environment=PATRONI_CONFIG_LOCATION=/pg/bin/patroni.yml
+
+          # Disable OOM kill on the postmaster
+          OOMScoreAdjust=-1000
+
+          ExecStart=/opt/app/patroni/bin/patroni ${PATRONI_CONFIG_LOCATION}
+          ExecReload=/bin/kill -HUP $MAINPID
+
+          # Give a reasonable amount of time for the server to start up/shut down
+          TimeoutSec=30
+          TimeoutStopSec=120s
+
+          # only kill the patroni process, not it's children, so it will gracefully stop postgres
+          KillSignal=SIGINT
+          KillMode=process
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /usr/lib/systemd/system/patroni.service
+        owner: root
+        group: root
+        mode: 0644
+
+
+
+################################################################
+# PLAY 2: Launch primary
+################################################################
+- name: Init Patroni
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  become: yes
+  become_method: sudo
+
+  hosts: primary
+  tasks:
+
+    ################################################################
+    # PHASE 1: [launch] primary patroni (postgresql)
+    ################################################################
+    - name: Launch primary patroni service
+      tags: [primary]
+      systemd:
+        name: patroni
+        state: started
+        enabled: yes
+      async: 300
+      poll: 0
+
+    - name: Waits postgres primary up
+      tags: [primary]
+      wait_for:
+        host: localhost
+        port: 5432
+        delay: 2
+        state: started
+
+    - name: Check primary postgres launch success
+      tags: [primary]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: /usr/pgsql/bin/pg_isready
+
+    ################################################################
+    # PHASE 2: [register] primary postgres service to DCS
+    ################################################################
+    - name: Register primary postgres service
+      tags: [register]
+      copy:
+        src: templates/srv-postgres.json
+        dest: /etc/consul.d/srv-postgres.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register primary.{{ cluster }} service
+      tags: [register]
+      template:
+        src: templates/srv-cluster-primary.json
+        dest: /etc/consul.d/srv-{{ cluster }}.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register primary patroni service
+      tags: [primary]
+      template:
+        src: templates/srv-patroni.json
+        dest: /etc/consul.d/srv-patroni.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register node-meta role=primary
+      tags: [register]
+      copy:
+        content: |
+          {"node_meta": {"role":"primary"}}
+        dest: /etc/consul.d/meta-role.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    # change node-meta require restart to take effect immediately
+    - name: Restarted consul
+      tags: [register]
+      systemd:
+        name: consul
+        state: restarted
+        enabled: yes
+
+
+
+################################################################
+# PLAY 3: Launch standby
+################################################################
+
+- name: Init Patroni
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  hosts: standby
+  tasks:
+    ################################################################
+    # PHASE 1: [launch] standby patroni
+    ################################################################
+    - name: Launch patroni service
+      tags: [standby]
+      systemd:
+        name: patroni
+        state: started
+        enabled: yes
+
+    - name: Waits postgres standby up
+      tags: [standby]
+      wait_for:
+        host: localhost
+        port: 5432
+        delay: 2
+        state: started
+
+
+    ################################################################
+    # PHASE 2: [register] standby postgres service to DCS
+    ################################################################
+    - name: Register standby postgres service
+      tags: [register]
+      copy:
+        src: templates/srv-postgres.json
+        dest: /etc/consul.d/srv-postgres.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register standby.{{ cluster }} service
+      tags: [register]
+      template:
+        src: templates/srv-cluster-standby.json
+        dest: /etc/consul.d/srv-{{ cluster }}.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register standby patroni service
+      tags: [standby]
+      template:
+        src: templates/srv-patroni.json
+        dest: /etc/consul.d/srv-patroni.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    - name: Register node-meta role=standby
+      tags: [register]
+      copy:
+        content: |
+          {"node_meta": {"role":"standby"}}
+        dest: /etc/consul.d/meta-role.json
+        owner: consul
+        group: postgres
+        mode: 0660
+
+    # change node-meta require restart to take effect immediately
+    - name: Reload/restarted consul
+      tags: [register]
+      systemd:
+        name: consul
+        state: restarted
+        enabled: yes
+
+
+
+
+################################################################
+# PLAY 3: Launch offline (TBD)
+################################################################

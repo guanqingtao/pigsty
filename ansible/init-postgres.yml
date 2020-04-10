@@ -1,0 +1,63 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   init-postgres.yml
+# Mtime     :   2020-03-25
+# Desc      :   init postgres cluster (install postgres)
+# Path      :   playbooks/init-postgres.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'cluster' by default
+#
+# Variables :
+#  cluster :  cluster name to init, 'testdb' by default
+#  version :  postgresql version to be installed
+#  install_opts :  '--with-postgis'  '--with-llvmjit'
+#==============================================================#
+- name: Init PostgreSQL Environment
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  hosts: cluster
+  tasks:
+
+    ################################################################
+    # PHASE 0: [check] local inventory precondition
+    ################################################################
+    - name: Check cluster and version variable
+      tags: [check]
+      shell: "echo 'variable <cluster> and <version> are required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: cluster is not defined or version is not defined
+
+    - name: Check connectivity
+      tags: [check]
+      action: ping
+
+
+    ################################################################
+    # PHASE 1: [install] postgres and related packages
+    ################################################################
+    # [install] postgresql
+    - name: Run install-postgres.sh
+      tags: [install]
+      script: templates/install-postgres.sh -c {{ cluster }} -v {{ version }} {{ install_opts | default('') }}
+
+
+    ################################################################
+    # PHASE 2: [sync] postgres utils and scripts
+    ################################################################
+    # [sync] /pg/bin scripts
+    - name: Copy pg scripts from bin/ to /pg/bin
+      tags: [sync]
+      copy:
+        src: bin/
+        dest: /pg/bin/
+        owner: postgres
+        group: postgres
+        mode: 0755
+

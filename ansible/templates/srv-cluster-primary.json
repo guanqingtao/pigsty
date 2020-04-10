@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "{{ cluster }}",
+    "port": 6432,
+    "tags": ["primary", "{{ seq }}"],
+    "check": {
+      "http": "http://{{ inventory_hostname }}:8008/master",
+      "interval": "5s"
+    }
+  }
+}

@@ -1,0 +1,58 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   ha-fencing.yml
+# Mtime     :   2020-03-30
+# Desc      :   shutdown primary nodes services
+# Path      :   playbooks/ha-fencing.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'primary' singleton
+#==============================================================#
+# Shoot primary instance and make sure it is dead
+- name: Fencing Primary Instance
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  hosts: primary
+  tasks:
+
+    # [check] precondition
+    - name: Check cluster variable
+      tags: [check]
+      shell: "echo 'cluster and version are required for init procedure' && exit 1"
+      when: cluster is not defined or version is not defined
+
+    - name: Check primary is singleton
+      tags: [check]
+      shell: "echo 'More than one primary instance configured: {{ groups.primary }}' && exit 1"
+      when: groups.primary|length != 1
+
+    # [halt] postgresql
+    - name: Stop running postgresql service
+      tags: [halt]
+      ignore_errors: true
+      systemd:
+        name: postgresql
+        state: stopped
+        enabled: no
+
+    # [validate] primary is fenced
+    - name: Validate postgres not running
+      tags: [validate]
+      ignore_errors: true
+      shell: "ps aux | grep -v grep | grep -- '-D /pg/data' | grep pgsql || exit 0 && exit 1"
+
+    - name: Validate primary is not connectable
+      tags: [validate]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: "/usr/pgsql/bin/psql -w -h {{ groups['primary'][0] }} -U replicator -d postgres -c 'SELECT 1;'; [[ $? == 0 ]] && exit 1 || exit 0"
+
+
+    # TODO: remove DNS/VIP/Traffic resolve to this instance

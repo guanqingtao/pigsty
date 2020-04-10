@@ -1,0 +1,93 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   init-reset.yml
+# Mtime     :   2020-03-27
+# Desc      :   reset everything before init-postgres.yml
+# Path      :   playbooks/init-reset.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'cluster'
+#   consul launched by init-node.yml will be kept
+#==============================================================#
+- name: Reset everything in cluster
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 10
+  become: yes
+  become_method: sudo
+
+  hosts: cluster
+  tasks:
+    ################################################################
+    # PHASE 0: Check precondition
+    ################################################################
+    # [check] precondition
+    - name: Check connectivity
+      tags: [check]
+      action: ping
+
+    - name: Check postgres not running
+      tags: [check]
+      shell: "ps aux | grep -v grep | grep -- '-D /pg/data' | grep pgsql || exit 0 && exit 1"
+      when: force is not defined
+
+
+    ################################################################
+    # PHASE 1: stop services precondition
+    ################################################################
+    # [clean] postgresql
+    - name: Stop running service
+      tags: [clean]
+      ignore_errors: true
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      with_items:
+        - postgresql
+        - pgbouncer
+        - pg_exporter
+        - pgbouncer_exporter
+        - patroni
+
+    - name: Remove directorys
+      tags: [clean]
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /pg
+        - /export
+        - /var/backups
+        - /usr/pgsql
+        - /usr/pgsql*
+
+    ################################################################
+    # PHASE 2: clean consul
+    ################################################################
+    - name: Remove consul metadata for patroni
+      tags: [consul]
+      ignore_errors: true
+      shell: |
+        consul kv delete -recurse /pg/{{ cluster }}
+
+    - name: Remove consul metadata and services
+      tags: [consul]
+      file:
+        path: "/etc/consul.d/{{ item }}"
+        state: absent
+      with_items:
+        - srv-postgres.json
+        - srv-pgbouncer.json
+        - srv-pg_exporter.json
+        - srv-pgbouncer_exporter.json
+        - meta-role.json
+
+    - name: Restart consul to reload node meta
+      tags: [consul]
+      systemd:
+        name: consul
+        state: restarted
+        enabled: yes

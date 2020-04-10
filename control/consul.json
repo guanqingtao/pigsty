@@ -1,0 +1,59 @@
+{
+  "datacenter": "pigsty",
+  "node_name": "node0",
+  "data_dir": "/var/lib/consul",
+  "bind_addr": "10.10.10.10",
+  "retry_join": ["10.10.10.10"],
+  "log_level": "INFO",
+  "server": true,
+  "ui": true,
+  "bootstrap_expect": 1,
+  "enable_script_checks": true,
+  "services": [
+    {
+      "name": "nginx",
+      "tags": ["monitor"],
+      "port": 80,
+      "check": {
+        "tcp": "localhost:80",
+        "interval": "5s"
+      }
+    },
+    {
+      "name": "prometheus",
+      "tags": ["monitor"],
+      "port": 9090,
+      "check": {
+        "tcp": "localhost:9090",
+        "interval": "5s"
+      }
+    },
+    {
+      "name": "alertmanager",
+      "tags": ["monitor"],
+      "port": 9093,
+      "check": {
+        "tcp": "localhost:9093",
+        "interval": "5s"
+      }
+    },
+    {
+      "name": "grafana",
+      "tags": ["monitor"],
+      "port": 3000,
+      "check": {
+        "tcp": "localhost:3000",
+        "interval": "5s"
+      }
+    },
+    {
+      "name": "consul",
+      "tags": ["consul"],
+      "port": 8500,
+      "check": {
+        "tcp": "localhost:8500",
+        "interval": "5s"
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+[pigsty]
+name=Pigsty Yum Repo
+baseurl=http://yum.pigsty/pigsty/
+skip_if_unavailable = 1
+priority = 1
+gpgcheck = 0
+enabled = 1

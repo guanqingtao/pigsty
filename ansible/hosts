@@ -1,0 +1,21 @@
+[cluster]
+10.10.10.11 seq=1 role=primary
+10.10.10.12 seq=2 role=standby
+10.10.10.13 seq=3 role=standby
+
+
+[cluster:vars]
+cluster=testdb
+version=12
+
+install_opts=""
+;install_opts="--with-postgis"
+initdb_opts="--encoding UTF8 --locale=C --data-checksums"
+
+repl_user=replicator
+repl_pass=replicator
+mon_user=dbuser_monitor
+mon_pass=dbuser_monitor
+biz_user=dbuser_test
+biz_pass=dbuser_test
+biz_db=testdb
