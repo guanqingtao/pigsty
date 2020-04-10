@@ -40,55 +40,63 @@ function setup_dns() {
 		printf "\033[0;31m[INFO] setup-dns.sh require root privilege \033[0m\n" >&2
 		return 1
 	fi
+
+	# /etc/hosts
 	if $(grep 'pigsty dns records' /etc/hosts >/dev/null 2>&1); then
 		printf "\033[0;33m[INFO]  dns already set in /etc/hosts, skip  \033[0m\n" >&2
-		return 0
+	else
+		# static resolv
+		cat >>/etc/hosts <<-EOF
+			# pigsty dns records
+			
+			# control nodes
+			10.10.10.10   pigsty
+			10.10.10.10   c.pigsty
+			10.10.10.10   g.pigsty
+			10.10.10.10   p.pigsty
+			10.10.10.10   pg.pigsty
+			10.10.10.10   am.pigsty
+			10.10.10.10   yum.pigsty
+			
+			# physicla nodes
+			10.10.10.10   n0
+			10.10.10.11   n1
+			10.10.10.12   n2
+			10.10.10.13   n3
+			10.10.10.10   node0
+			10.10.10.11   node1
+			10.10.10.12   node2
+			10.10.10.13   node3
+			
+			# virtual IP
+			10.10.10.2   cluster.testdb
+			10.10.10.3   primary.testdb
+			10.10.10.4	 standby.testdb
+			10.10.10.5	 offline.testdb
+			
+			# biz cluster
+			10.10.10.10   1.metadb
+			10.10.10.11   1.testdb
+			10.10.10.12   2.testdb
+			10.10.10.13   3.testdb
+
+		EOF
+
+		printf "\033[0;32m[INFO] write dns records into /etc/hosts \033[0m\n" >&2
 	fi
 
-	# static resolv
-	cat >>/etc/hosts <<-EOF
-		# pigsty dns records
 
-		# control nodes
-		10.10.10.10   pigsty
-		10.10.10.10   c.pigsty
-		10.10.10.10   g.pigsty
-		10.10.10.10   p.pigsty
-		10.10.10.10   pg.pigsty
-		10.10.10.10   am.pigsty
-		10.10.10.10   yum.pigsty
+	# /etc/resolv.conf
+	if $(grep 'nameserver 10.10.10.10' /etc/resolv.conf >/dev/null 2>&1); then
+		printf "\033[0;33m[INFO] dns resolv already set in /etc/resolv.conf, skip  \033[0m\n" >&2
+	else
+		echo "nameserver 10.10.10.10" | cat - /etc/resolv.conf >/tmp/resolv.conf
+		chmod 644 /tmp/resolv.conf
+		mv -f /tmp/resolv.conf /etc/resolv.conf
 
-		# physicla nodes
-		10.10.10.10   n0
-		10.10.10.11   n1
-		10.10.10.12   n2
-		10.10.10.13   n3
-		10.10.10.10   node0
-		10.10.10.11   node1
-		10.10.10.12   node2
-		10.10.10.13   node3
-
-		# virtual IP
-		10.10.10.2   cluster.testdb
-		10.10.10.3   primary.testdb
-		10.10.10.4	 standby.testdb
-		10.10.10.5	 offline.testdb
-
-		# biz cluster
-		10.10.10.10   1.metadb
-		10.10.10.11   1.testdb
-		10.10.10.12   2.testdb
-		10.10.10.13   3.testdb
-
-		
-	EOF
-
-	if [[ $? != 0 ]]; then
-		printf "\033[0;31m[INFO] write dns record failed \033[0m\n" >&2
-		return 2
+		printf "\033[0;32m[INFO] write resolver records into /etc/resolv.conf \033[0m\n" >&2
 	fi
 
-	printf "\033[0;32m[INFO] write dns records into /etc/hosts \033[0m\n" >&2
 	return 0
 }
 

@@ -413,7 +413,7 @@ function setup_control() {
 		prometheus2 alertmanager grafana consul etcd postgresql12 \
 		node_exporter pg_exporter consul_exporter nginx_exporter \
 		python-pip python-ipython python2-psycopg2 ansible \
-		ntp lz4 nc jq pv git bind-utils net-tools sysstat dnsutils pgadmin4
+		ntp lz4 nc jq pv git bind-utils net-tools sysstat dnsutils pgadmin4 dnsmasq
 
 	# setup postgresql tools
 	ln -s /usr/pgsql-12 /usr/pgsql
@@ -472,16 +472,25 @@ function setup_control() {
 
 	# setup pgadmin4
 
+	# setup dnsmasq
+	cat >/etc/dnsmasq.d/config <<-'EOF'
+		port=53
+		listen-address=10.10.10.10
+		server=/consul/127.0.0.1#8600
+	EOF
+
 	# launch services
 	systemctl daemon-reload
 	systemctl enable ntpd
 	systemctl enable consul
+	systemctl enable dnsmasq
 	systemctl enable prometheus
 	systemctl enable alertmanager
 	systemctl enable grafana-server
 
 	systemctl start ntpd
 	systemctl start consul
+	systemctl start dnsmasq
 	systemctl start prometheus
 	systemctl start alertmanager
 	systemctl start grafana-server
