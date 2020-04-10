@@ -19,7 +19,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 2,
-  "iteration": 1586451824415,
+  "iteration": 1586516240910,
   "links": [
     {
       "icon": "external link",
@@ -13574,7 +13574,7 @@
       }
     }
   ],
-  "refresh": "30s",
+  "refresh": "2s",
   "schemaVersion": 22,
   "style": "dark",
   "tags": [
@@ -13586,6 +13586,7 @@
       {
         "allValue": null,
         "current": {
+          "selected": true,
           "text": "1.testdb",
           "value": "1.testdb"
         },
@@ -13807,5 +13808,5 @@
   "variables": {
     "list": []
   },
-  "version": 54
+  "version": 56
 }

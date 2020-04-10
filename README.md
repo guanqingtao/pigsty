@@ -1,14 +1,53 @@
 # Pigsty - PostgreSQL Deploy Template
 
-> PIGSTY: Postgres Installation Graphic Standard Template.Yaml
+> PIGSTY: Postgres Installation Good Standard Template.Yaml 😂
 
-This repo provides a PostgreSQL testing environment based on [vagrant](https://vagrantup.com/) consist of 4 vm nodes.
+This project provides a PostgreSQL testing environment based on [vagrant](https://vagrantup.com/). 
 
-It is a template for illustrating some practice about running PostgreSQL in real world. A minimal HA cluster consist of 3 nodes (primary, standby, offline) and a battery included control center (monitoring, alerting, DCS, HA, yum..)
+It is a template for setup, deploying, monitoring, managing a high available PostgreSQL cluster.
+
+Minimal PG HA cluster consist of 3 DB nodes managed by [patroni](https://github.com/zalando/patroni). 
+
+A battery included control node including a series of ansible playbooks and a powerful monitoring system.
+
+![](doc/img/pg-cluster.png)
+
+![](doc/img/pg-instance.png)
+
+
+
+## Quick Start
+
+1. Install [vagrant](https://vagrantup.com/) and [virtualbox](https://www.virtualbox.org/)
+2. `git clone https://github.com/vonng/pigsty && cd pigsty`
+3. `make dns` (one-time job, write DNS records to `/etc/hosts`)
+4. `./build.sh` (pull up vm cluster, setup control node and init postgres cluster)
+5. Open http://pigsty to explore (pigsty is a local dns record created in step 3 )
+
+Then you will have a running PostgreSQL cluster with a battery included monitoring/managing system.
+
+> **Tips**: bootstrap pigsty may takes a long time to download yum packages. Once you have a functional pigsty instance. Run `make cache` to copy rpm packages to `pigsty/control/yum`, so next time it would be much faster (15min to 1min)
+
+6. Do whatever you like to explore Postgres
+
+```bash
+# for example, pgbench default database
+pgbench postgres://dbuser_test:dbuser_test@primary.testdb.service.consul:5432/testdb -i -s 10
+
+# bench primary service
+pgbench postgres://dbuser_test:dbuser_test@primary.testdb.service.consul:6432/testdb -n -v -T 100
+
+# bench standby service
+pgbench postgres://dbuser_test:dbuser_test@standby.testdb.service.consul:6432/testdb --select-only -n -v -T 100
+```
+
+
 
 
 
 ## Architecture
+
+![](doc/img/architecture.png)
 
 This cluster contains 4 nodes running following services:
 
@@ -18,10 +57,6 @@ This cluster contains 4 nodes running following services:
 | node1 | 10.10.10.11 | 1.testdb (primary) | consul, postgres, pgbouncer, patroni, node_exporter, pg_exporter, pgbouncer_exporter |
 | node2 | 10.10.10.12 | 2.testdb (standby) | same as above                                                |
 | node3 | 10.10.10.13 | 3.testdb (standby) | same as above                                                |
-
-
-
-![](doc/img/architecture.png)
 
 **Control Node Services** 
 
@@ -70,29 +105,15 @@ psql postgres://dbuser_test:dbuser_test@standby.testdb.service.consul:5432/testd
 
 
 
-
-
-## Quick Start
-
-1. Install [vagrant](https://vagrantup.com/) and [virtualbox](https://www.virtualbox.org/)
-2. `git clone https://github.com/vonng/pigsty && cd pigsty`
-3. `make dns` (one-time job, write DNS records to `/etc/hosts`)
-4. `./build.sh` (pull up vm cluster, setup control node and init postgres cluster)
-5. Open http://pigsty  (pigsty is a local dns record created in step 3 )
-
-Then you will have a running PostgreSQL cluster with a battery included monitoring/managing system.
-
-> **Tips**: bootstrap pigsty may takes a long time to download yum packages. Once you have a functional pigsty instance. Run `make cache` to copy rpm packages to `pigsty/control/yum`, so next time it would be much faster (15min to 1min)
-
-
-
 ## What's Next?
 
 * Explore the monitoring system
 * Add some load to cluster
-* HA scenario
+* [Patroni HA Drill](doc/patroni-ha.md)
 * Managing postgres cluster with ansible
 * blah blah...
+
+
 
 
 

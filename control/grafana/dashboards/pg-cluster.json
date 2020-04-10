@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 1,
   "id": 4,
-  "iteration": 1586452011166,
+  "iteration": 1586516319189,
   "links": [
     {
       "asDropdown": false,
@@ -236,8 +236,8 @@
           "decimals": 2,
           "link": true,
           "linkTargetBlank": false,
-          "linkTooltip": "ins level dashboard for  ${__cell}",
-          "linkUrl": "/d/pg_ins/pg-instance?var-ins=${__cell}",
+          "linkTooltip": "instance level dashboard for  ${__cell}",
+          "linkUrl": "/d/pg_instance/pg-instance?var-ins=${__cell}",
           "mappingType": 1,
           "pattern": "ins",
           "thresholds": [
@@ -296,7 +296,7 @@
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "decimals": 2,
           "mappingType": 1,
-          "pattern": "/Time|instance|cls|role|srv|job|Status/",
+          "pattern": "/Time|instance|cls|srv|job|Status/",
           "thresholds": [],
           "type": "hidden",
           "unit": "short"
@@ -317,6 +317,24 @@
           "thresholds": [],
           "type": "string",
           "unit": "short"
+        },
+        {
+          "alias": "Role",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "role",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short",
+          "valueMaps": []
         }
       ],
       "targets": [
@@ -615,7 +633,7 @@
       "links": [
         {
           "title": "Instance level dashboard for primary of this cls ${ins}",
-          "url": "/d/pg_ins/pg-ins?var-ins=${ins}&var-cls_filter=${cls}"
+          "url": "/d/pg_instance/pg-instance?var-ins=${ins}&var-cls_filter=${cls}"
         }
       ],
       "mappingType": 1,
@@ -756,7 +774,7 @@
       "gridPos": {
         "h": 4,
         "w": 11,
-        "x": 12,
+        "x": 11,
         "y": 8
       },
       "id": 235,
@@ -1312,7 +1330,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(pg_standby_last_lsn{cls=\"$cls\", ins!=\"$ins\", status=\"streaming\"})",
+          "expr": "count(pg_standby_last_lsn{cls=\"$cls\", role!=\"primary\", status=\"streaming\"})",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1653,7 +1671,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "node:instance:cpu_usage{cls=\"$cls\", role=\"primary\"}",
+          "expr": "max(node:instance:cpu_usage{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -1773,7 +1791,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pgb:instance:qps{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -1891,7 +1909,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "pg:instance:tps{cls=\"$cls\", role=\"primary\"}",
+          "expr": "max(pg:instance:tps{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2009,7 +2027,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "pgb:instance:rt{cls=\"$cls\", role=\"primary\"}",
+          "expr": "max(pgb:instance:rt{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2126,7 +2144,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pg_db_numbackends{ins=\"$ins\"}) by (ins)",
+          "expr": "max(pg:instance:numbackends{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2142,7 +2160,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -2242,7 +2262,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgbouncer_pool_active_servers{ins=\"$ins\"})",
+          "expr": "max(pgb:instance:active_servers{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2258,7 +2278,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -2358,7 +2380,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgbouncer_pool_active_clients{ins=\"$ins\"})",
+          "expr": "sum(pgb:instance:active_clients{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2374,7 +2396,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -2474,7 +2498,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgbouncer_pool_waiting_clients{ins=\"$ins\"})",
+          "expr": "max(pgb:instance:waiting_clients{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2490,7 +2514,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3062,7 +3088,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg_db_numbackends{ins=~\"\\\\d+\\\\.standby\\\\.$cls\"})",
+          "expr": "max(pg:instance:numbackends{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3078,7 +3104,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3178,7 +3206,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgbouncer_pool_active_servers{ins=~\"\\\\d+\\\\.standby\\\\.$cls\"})",
+          "expr": "max(pgb:instance:active_servers{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3194,7 +3222,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3294,7 +3324,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgbouncer_pool_active_clients{ins=~\"\\\\d+\\\\.standby\\\\.$cls\"})",
+          "expr": "sum(pgb:instance:active_clients{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3310,7 +3340,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3410,7 +3442,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgbouncer_pool_waiting_clients{ins=~\"\\\\d+\\\\.standby\\\\.$cls\"})",
+          "expr": "sum(pgb:instance:waiting_clients{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3426,7 +3458,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3646,7 +3680,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(irate(pgbouncer_stat_total_query_count{cls=\"$cls\", datname!=\"pgbouncer\"}[1m]))",
+          "expr": "sum(pgb:instance:qps{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3662,7 +3696,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3762,7 +3798,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum by (cls) (irate(pg_db_xact_total{cls=\"$cls\"}[1m]))",
+          "expr": "sum(pg:instance:tps{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3778,7 +3814,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3877,7 +3915,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max by (cls) (pg_repl_replay_lag{cls=\"$cls\"})",
+          "expr": "max(pg_repl_replay_lag{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3893,6 +3931,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
           "orderByTime": "ASC",
@@ -3994,7 +4033,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "rate(pg_lsn{ins=\"$ins\"}[1m])",
+          "expr": "max(pg:instance:wal_rate{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4010,6 +4049,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Disk Free",
           "orderByTime": "ASC",
@@ -4110,7 +4150,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg_database_age{ins=\"$ins\"})",
+          "expr": "max(pg_database_age{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4127,6 +4167,7 @@
             }
           ],
           "instant": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "",
           "orderByTime": "ASC",
@@ -4229,7 +4270,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum(pg_size_database{ins=\"$ins\"})",
+          "expr": "max(sum by (ins) (pg_size_database{cls=\"$cls\"}))",
           "format": "time_series",
           "groupBy": [
             {
@@ -4246,7 +4287,9 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "rawSql": "SELECT\n  $__time(time_column),\n  value1\nFROM\n  metric_table\nWHERE\n  $__timeFilter(time_column)\n",
@@ -4363,7 +4406,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -4420,7 +4465,7 @@
       "fontSize": "100%",
       "gridPos": {
         "h": 4,
-        "w": 9,
+        "w": 8,
         "x": 0,
         "y": 25
       },
@@ -4437,7 +4482,7 @@
           "alias": "Time",
           "align": "auto",
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "/__name__|Value|pid|status|Time|job|port|cls|exported_port/",
+          "pattern": "/__name__|status|instance|role|srv|pid|Time|job|port|cls/",
           "type": "hidden"
         },
         {
@@ -4478,7 +4523,7 @@
           "unit": "short"
         },
         {
-          "alias": "➡️ RecvIP  ",
+          "alias": "➡️ Receiver IP  ",
           "align": "auto",
           "colorMode": null,
           "colors": [
@@ -4493,11 +4538,28 @@
           "thresholds": [],
           "type": "number",
           "unit": "short"
+        },
+        {
+          "alias": "Timeline",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "mappingType": 1,
+          "pattern": "Value",
+          "thresholds": [],
+          "type": "number",
+          "unit": "none"
         }
       ],
       "targets": [
         {
-          "expr": "pg_standby_last_lsn{cls='$cls'}",
+          "expr": "pg_standby_last_tli{cls='$cls'}",
           "format": "table",
           "groupBy": [
             {
@@ -4515,6 +4577,7 @@
           ],
           "hide": false,
           "instant": true,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{state}}",
           "orderByTime": "ASC",
@@ -4540,7 +4603,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "WAL Receiver",
+      "title": "WAL Receiver ⬅️",
       "transform": "table",
       "transparent": true,
       "type": "table"
@@ -4552,8 +4615,8 @@
       "fontSize": "100%",
       "gridPos": {
         "h": 4,
-        "w": 15,
-        "x": 9,
+        "w": 16,
+        "x": 8,
         "y": 25
       },
       "id": 265,
@@ -4569,7 +4632,7 @@
           "alias": "Time",
           "align": "auto",
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "pattern": "/Time|job|application_name|port|cls|Value/",
+          "pattern": "/Time|job|instance|cls|srv|pid|port|cls/",
           "type": "hidden"
         },
         {
@@ -4584,8 +4647,8 @@
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "decimals": 2,
           "link": true,
-          "linkTooltip": "ins level dashboard for ${__cell}",
-          "linkUrl": "/d/pg_database/pg-ins?var-ins=${__cell}&var-cls_filter=${cls}",
+          "linkTooltip": "instance level dashboard for sender ${__cell}",
+          "linkUrl": "/d/pg_instance/pg-instance?var-ins=${__cell}",
           "mappingType": 1,
           "pattern": "ins",
           "thresholds": [],
@@ -4594,7 +4657,7 @@
           "valueMaps": []
         },
         {
-          "alias": "RecvIP ⬅️",
+          "alias": "Receiver ⬅️",
           "align": "auto",
           "colorMode": null,
           "colors": [
@@ -4604,8 +4667,11 @@
           ],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "decimals": 2,
+          "link": true,
+          "linkTooltip": "instance level dashboard for receiver ${__cell}",
+          "linkUrl": "/d/pg_instance/pg-instance?var-ins=${__cell}",
           "mappingType": 1,
-          "pattern": "client_addr",
+          "pattern": "application_name",
           "thresholds": [],
           "type": "number",
           "unit": "short"
@@ -4628,7 +4694,7 @@
           "unit": "short"
         },
         {
-          "alias": "App Name",
+          "alias": "Receiver IP",
           "align": "auto",
           "colorMode": null,
           "colors": [
@@ -4639,10 +4705,118 @@
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "decimals": 2,
           "mappingType": 1,
-          "pattern": "application_name",
+          "pattern": "client_addr",
           "thresholds": [],
           "type": "number",
           "unit": "short"
+        },
+        {
+          "alias": "Role",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "role",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        },
+        {
+          "alias": "State",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "state",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short",
+          "valueMaps": [
+            {
+              "text": "STARTUP",
+              "value": "startup"
+            },
+            {
+              "text": "CATCHUP",
+              "value": "catchup"
+            },
+            {
+              "text": "BACKUP",
+              "value": "backup"
+            },
+            {
+              "text": "SHUTUP",
+              "value": "stopping"
+            },
+            {
+              "text": "OK",
+              "value": "streaming"
+            }
+          ]
+        },
+        {
+          "alias": "Sync",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "sync_state",
+          "thresholds": [],
+          "type": "string",
+          "unit": "short",
+          "valueMaps": [
+            {
+              "text": "ASYNC",
+              "value": "async"
+            },
+            {
+              "text": "POTENTIAL",
+              "value": "potential"
+            },
+            {
+              "text": "SYNC",
+              "value": "sync"
+            },
+            {
+              "text": "QUORUM",
+              "value": "quorum"
+            }
+          ]
+        },
+        {
+          "alias": "Lag",
+          "align": "auto",
+          "colorMode": null,
+          "colors": [
+            "rgba(245, 54, 54, 0.9)",
+            "rgba(237, 129, 40, 0.89)",
+            "rgba(50, 172, 45, 0.97)"
+          ],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 0,
+          "mappingType": 1,
+          "pattern": "Value",
+          "thresholds": [],
+          "type": "number",
+          "unit": "bytes"
         }
       ],
       "targets": [
@@ -4665,6 +4839,7 @@
           ],
           "hide": false,
           "instant": true,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{state}}",
           "orderByTime": "ASC",
@@ -4690,7 +4865,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "WAL Sender",
+      "title": "⬅️ WAL Sender",
       "transform": "table",
       "transparent": true,
       "type": "table"
@@ -5337,8 +5512,8 @@
         "alignAsTable": true,
         "avg": false,
         "current": true,
-        "max": true,
-        "min": true,
+        "max": false,
+        "min": false,
         "rightSide": true,
         "show": true,
         "sort": "current",
@@ -5382,6 +5557,7 @@
           ],
           "hide": false,
           "instant": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}-{{state}}",
           "orderByTime": "ASC",
@@ -6120,7 +6296,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node_load5{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}",
+          "expr": "node_load5{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -6290,7 +6466,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (node:instance:disk_read{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"})",
+          "expr": "sum by (ins) (node:instance:disk_read{cls=\"$cls\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6298,7 +6474,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum by (ins) (node:instance:disk_write{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"})",
+          "expr": "sum by (ins) (node:instance:disk_write{cls=\"$cls\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6417,7 +6593,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (node:instance:network_transmit{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\",device!~\"lo\"})",
+          "expr": "sum by (ins) (node:instance:network_transmit{cls=\"$cls\",device!~\"lo\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6425,7 +6601,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum by (ins) (node:instance:network_receive{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\",device!~\"lo\"})",
+          "expr": "sum by (ins) (node:instance:network_receive{cls=\"$cls\" ,device!~\"lo\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6548,7 +6724,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pg:instance:tps{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}",
+          "expr": "pg:instance:tps{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -6690,7 +6866,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pgb:ins:qps{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}",
+          "expr": "pgb:instance:qps{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -6799,13 +6975,13 @@
       "legend": {
         "alignAsTable": true,
         "avg": false,
-        "current": false,
+        "current": true,
         "max": false,
         "min": false,
         "rightSide": true,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": false,
       "linewidth": 1,
@@ -6830,7 +7006,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (pg:instance:rollbacks{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"})",
+          "expr": "sum by (ins) (pg:instance:rollbacks{cls=\"$cls\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -6907,13 +7083,13 @@
       "legend": {
         "alignAsTable": true,
         "avg": false,
-        "current": false,
+        "current": true,
         "max": false,
         "min": false,
         "rightSide": true,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": true,
       "linewidth": 1,
@@ -6939,7 +7115,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pgb:ins:rt{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"}",
+          "expr": "pgb:instance:rt{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -7078,7 +7254,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pgb:ins:qps{ins=\"$ins\"}",
+          "expr": "pgb:instance:qps{cls=\"$cls\", role=\"primary\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7087,7 +7263,7 @@
           "refId": "A"
         },
         {
-          "expr": "pgb:ins:qps{ins=\"$ins\"} OFFSET 1d",
+          "expr": "pgb:instance:qps{cls=\"$cls\", role=\"primary\"} OFFSET 1d",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7096,7 +7272,7 @@
           "refId": "B"
         },
         {
-          "expr": "pgb:ins:qps{ins=\"$ins\"} OFFSET 2d",
+          "expr": "pgb:instance:qps{cls=\"$cls\", role=\"primary\"} OFFSET 2d",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7204,7 +7380,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(pgb:ins:qps{ins=~\"\\\\d+\\\\.standby.$cls\"})",
+          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7213,7 +7389,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(pgb:ins:qps{ins=~\"\\\\d+\\\\.standby.$cls\"} OFFSET 1d)",
+          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"} OFFSET 1d)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7222,7 +7398,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum(pgb:ins:qps{ins=~\"\\\\d+\\\\.standby.$cls\"} OFFSET 2d)",
+          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"} OFFSET 2d)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7498,8 +7674,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins)(increase(pg_db_blks_hit{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}[1m])) / sum by (ins)(increase(pg_db_blks_access{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}[1m]))",
+          "expr": "sum by (ins) (increase(pg_db_blks_hit{cls=\"$cls\"}[1m])) / sum by (ins)(increase(pg_db_blks_access{cls=\"$cls\"}[1m]))",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}",
           "refId": "B"
@@ -7610,7 +7787,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (irate(pg_db_tup_returned{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"}[1m]))",
+          "expr": "sum by (ins) (irate(pg_db_tup_returned{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -7626,6 +7803,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -7984,7 +8162,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(pgb:ins:qps{ins=~\"\\\\d+\\\\.(standby)\\\\.$cls$\"}) / sum(pgb:ins:qps{ins=~\"\\\\d+\\\\.(primary)\\\\.$cls$\"})",
+          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"primary\"}) / sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -8094,13 +8272,13 @@
       "hiddenSeries": false,
       "id": 298,
       "legend": {
-        "alignAsTable": true,
+        "alignAsTable": false,
         "avg": false,
         "current": false,
         "max": false,
         "min": false,
-        "rightSide": true,
-        "show": true,
+        "rightSide": false,
+        "show": false,
         "total": false,
         "values": false
       },
@@ -8128,7 +8306,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(pg_db_tup_fetched{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}[1m])) / sum(increase(pg_db_tup_modified{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls$\"}[1m]))",
+          "expr": "sum(increase(pg_db_tup_fetched{cls=\"$cls\"}[1m])) / sum(increase(pg_db_tup_modified{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -8144,8 +8322,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{ins}}",
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "B",
@@ -8823,7 +9002,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "sum by (ins) (pg_activity_count{state=~\"idle in transaction.*\", ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"})",
+          "expr": "sum by (ins) (pg_activity_count{state=~\"idle in transaction.*\", cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -8839,6 +9018,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -9005,7 +9185,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "sum by (ins) (pg_lock_count{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"})",
+          "expr": "sum by (ins) (pg_lock_count{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9021,6 +9201,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -9139,7 +9320,7 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "sum(increase(pg_db_confl_bufferpin{ins=~\"\\\\d+\\\\.$cls\"}[1m]))",
+          "expr": "sum(increase(pg_db_confl_bufferpin{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -9155,6 +9336,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "BufferPin",
           "orderByTime": "ASC",
@@ -9178,33 +9360,37 @@
           "tags": []
         },
         {
-          "expr": "sum(increase(pg_db_confl_deadlock{ins=~\"\\\\d+\\\\.$cls\"}[1m]))",
+          "expr": "sum(increase(pg_db_confl_deadlock{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Deadlock",
           "refId": "B"
         },
         {
-          "expr": "sum(increase(pg_db_confl_snapshot{ins=~\"\\\\d+\\\\.$cls\"}[1m]))",
+          "expr": "sum(increase(pg_db_confl_snapshot{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Snapshot",
           "refId": "C"
         },
         {
-          "expr": "sum(increase(pg_db_confl_lock{ins=~\"\\\\d+\\\\.$cls\"}[1m]))",
+          "expr": "sum(increase(pg_db_confl_lock{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Lock",
           "refId": "D"
         },
         {
-          "expr": "sum(increase(pg_db_confl_tablespace{ins=~\"\\\\d+\\\\.$cls\"}[1m]))",
+          "expr": "sum(increase(pg_db_confl_tablespace{cls=\"$cls\"}[1m]))",
           "format": "time_series",
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "Tablespace",
           "refId": "E"
@@ -9357,7 +9543,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (state) (pg_activity_count{ins=\"$ins\"})",
+          "expr": "sum by (state) (pg_activity_count{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9373,6 +9559,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{state}}",
           "orderByTime": "ASC",
@@ -9522,7 +9709,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (pg_db_numbackends{ins=~\"\\\\d+\\\\.$cls\"})",
+          "expr": "sum by (ins) (pg_db_numbackends{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9538,6 +9725,7 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -9675,7 +9863,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "pgbouncer_pool_active_servers{ins=\"$ins\", datname!=\"pgbouncer\"}",
+          "expr": "sum by (user) (pgb:instance:active_servers{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9692,8 +9880,9 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{datname}}:{{user}}",
+          "legendFormat": "{{user}}",
           "orderByTime": "ASC",
           "policy": "default",
           "rawSql": "SELECT\n  $__time(time_column),\n  value1\nFROM\n  metric_table\nWHERE\n  $__timeFilter(time_column)\n",
@@ -9813,7 +10002,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (ins) (pgbouncer_pool_active_servers{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"})",
+          "expr": "sum by (ins) (pgb:instance:active_servers{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9830,6 +10019,7 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -9964,7 +10154,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "pgbouncer_pool_active_clients{ins=\"$ins\", datname!=\"pgbouncer\"}",
+          "expr": "sum by (user) (pgb:instance:active_clients{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9981,6 +10171,7 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{datname}}:{{user}}",
           "orderByTime": "ASC",
@@ -10101,7 +10292,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (user) (pgbouncer_pool_active_clients{ins=~\"\\\\d+\\\\.standby\\\\.$cls\"})",
+          "expr": "sum by (user) (pgb:instance:active_clients{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10118,6 +10309,7 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{user}}",
           "orderByTime": "ASC",
@@ -10244,7 +10436,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (ins) (pgbouncer_pool_active_clients{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"})",
+          "expr": "sum by (ins) (pgb:instance:active_clients{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10261,6 +10453,7 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -10378,7 +10571,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (ins) (pgbouncer_pool_waiting_clients{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"})",
+          "expr": "sum by (ins) (pgb:instance:waiting_clients{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10395,6 +10588,7 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -10761,7 +10955,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "(irate(pg_bgwriter_buffers_checkpoint{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"}[1m])  +  irate(pg_bgwriter_buffers_backend{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"}[1m]))* 8192",
+          "expr": "(irate(pg_bgwriter_buffers_checkpoint{cls=\"$cls\"}[1m])  +  irate(pg_bgwriter_buffers_backend{cls=\"$cls\"}[1m]))* 8192",
           "format": "time_series",
           "groupBy": [
             {
@@ -11098,7 +11292,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(pg_bgwriter_buffers_alloc{ins=~\"\\\\d+\\\\.(primary|standby)\\\\.$cls\"}[1m])* 8192",
+          "expr": "irate(pg_bgwriter_buffers_alloc{cls=\"$cls\"}[1m])* 8192",
           "format": "time_series",
           "groupBy": [
             {
@@ -11633,7 +11827,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (rate(pg_db_temp_bytes{ins=~\"\\\\d+\\\\.$cls\"}[5m]))",
+          "expr": "sum by (ins) (rate(pg_db_temp_bytes{cls=\"$cls\"}[5m]))",
           "format": "time_series",
           "groupBy": [
             {
@@ -11651,6 +11845,7 @@
           ],
           "hide": false,
           "instant": false,
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}",
           "orderByTime": "ASC",
@@ -11767,8 +11962,9 @@
       "steppedLine": true,
       "targets": [
         {
-          "expr": "sum by (ins) (increase(pg_db_temp_files{ins=~\"^\\\\d+\\\\.$cls$\"}[1m]))",
+          "expr": "sum by (ins) (increase(pg_db_temp_files{cls=\"$cls\"}[1m]))",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{ins}}",
           "refId": "B"
@@ -11865,7 +12061,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pg_database_age{ins=\"$ins\"}",
+          "expr": "max by (datname) (pg_database_age{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -12166,7 +12362,7 @@
       }
     }
   ],
-  "refresh": "10s",
+  "refresh": "30s",
   "schemaVersion": 22,
   "style": "dark",
   "tags": [
@@ -12204,13 +12400,11 @@
       {
         "allValue": null,
         "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
+          "text": "1.testdb",
+          "value": "1.testdb"
         },
         "datasource": "default",
-        "definition": "label_values(pg_up{job=\"pg\",cls=~\"$cls\", ins=~\".*primary.*\"},ins)",
+        "definition": "label_values(pg_up{cls=\"$cls\", role=\"primary\"} , ins)",
         "hide": 2,
         "includeAll": false,
         "index": -1,
@@ -12218,119 +12412,7 @@
         "multi": false,
         "name": "ins",
         "options": [],
-        "query": "label_values(pg_up{job=\"pg\",cls=~\"$cls\", ins=~\".*primary.*\"},ins)",
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
-        "datasource": "default",
-        "definition": "label_values(pg_up{ins=\"$ins\"}, ins)",
-        "hide": 2,
-        "includeAll": false,
-        "index": -1,
-        "label": "Sequence",
-        "multi": false,
-        "name": "sequence",
-        "options": [],
-        "query": "label_values(pg_up{ins=\"$ins\"}, ins)",
-        "refresh": 1,
-        "regex": "/(\\d+)\\.[a-z0-9-_.]*/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
-        "datasource": "default",
-        "definition": "label_values(pg_up{ins=\"$ins\"}, ins)",
-        "hide": 2,
-        "includeAll": false,
-        "index": -1,
-        "label": "Service",
-        "multi": false,
-        "name": "service",
-        "options": [],
-        "query": "label_values(pg_up{ins=\"$ins\"}, ins)",
-        "refresh": 1,
-        "regex": "/\\d+\\.([a-z0-9-_.]*)/",
-        "skipUrlSync": false,
-        "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
-        "datasource": "default",
-        "definition": "label_values(pg_up{job=\"pg\"},ins)",
-        "hide": 2,
-        "includeAll": false,
-        "index": -1,
-        "label": "Role",
-        "multi": false,
-        "name": "role",
-        "options": [],
-        "query": "label_values(pg_up{job=\"pg\"},ins)",
-        "refresh": 1,
-        "regex": "/\\d+\\.(\\w+)\\.[a-z0-9-_.]*/",
-        "skipUrlSync": false,
-        "sort": 1,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
-      },
-      {
-        "allValue": null,
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
-        "datasource": "default",
-        "definition": "label_values(pg_up{ins=\"$ins\"} , ip)",
-        "hide": 2,
-        "includeAll": false,
-        "index": -1,
-        "label": "IP",
-        "multi": false,
-        "name": "ip",
-        "options": [],
-        "query": "label_values(pg_up{ins=\"$ins\"} , ip)",
+        "query": "label_values(pg_up{cls=\"$cls\", role=\"primary\"} , ins)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -12344,13 +12426,11 @@
       {
         "allValue": "^.*$",
         "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
+          "text": "testdb",
+          "value": "testdb"
         },
         "datasource": "default",
-        "definition": "label_values(pg_database_size{ins=\"$ins\"}, datname)",
+        "definition": "label_values(pg_database_size{cls=\"$cls\"}, datname)",
         "hide": 2,
         "includeAll": false,
         "index": -1,
@@ -12358,7 +12438,7 @@
         "multi": false,
         "name": "datname",
         "options": [],
-        "query": "label_values(pg_database_size{ins=\"$ins\"}, datname)",
+        "query": "label_values(pg_database_size{cls=\"$cls\"}, datname)",
         "refresh": 1,
         "regex": "(?!^monitordb$)(?!^postgres$)(?!^pgbouncer$)(?!^template\\d$)(^.*$)",
         "skipUrlSync": false,
@@ -12409,5 +12489,5 @@
   "variables": {
     "list": []
   },
-  "version": 47
+  "version": 60
 }
