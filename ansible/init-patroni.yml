@@ -158,7 +158,7 @@
     - name: Copy initdb scripts
       tags: [config]
       template:
-        src: "templates/initdb.sh.j2"
+        src: "templates/initdb.sh"
         dest: "/pg/bin/initdb.sh"
         owner: postgres
         group: postgres
@@ -264,54 +264,6 @@
       become_user: postgres
       shell: /usr/pgsql/bin/pg_isready
 
-    ################################################################
-    # PHASE 2: [register] primary postgres service to DCS
-    ################################################################
-    - name: Register primary postgres service
-      tags: [register]
-      copy:
-        src: templates/srv-postgres.json
-        dest: /etc/consul.d/srv-postgres.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Register primary.{{ cluster }} service
-      tags: [register]
-      template:
-        src: templates/srv-cluster-primary.json
-        dest: /etc/consul.d/srv-{{ cluster }}.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Register primary patroni service
-      tags: [primary]
-      template:
-        src: templates/srv-patroni.json
-        dest: /etc/consul.d/srv-patroni.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Register node-meta role=primary
-      tags: [register]
-      copy:
-        content: |
-          {"node_meta": {"role":"primary"}}
-        dest: /etc/consul.d/meta-role.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    # change node-meta require restart to take effect immediately
-    - name: Restarted consul
-      tags: [register]
-      systemd:
-        name: consul
-        state: restarted
-        enabled: yes
-
 
 
 ################################################################
@@ -345,58 +297,3 @@
         delay: 2
         state: started
 
-
-    ################################################################
-    # PHASE 2: [register] standby postgres service to DCS
-    ################################################################
-    - name: Register standby postgres service
-      tags: [register]
-      copy:
-        src: templates/srv-postgres.json
-        dest: /etc/consul.d/srv-postgres.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Register standby.{{ cluster }} service
-      tags: [register]
-      template:
-        src: templates/srv-cluster-standby.json
-        dest: /etc/consul.d/srv-{{ cluster }}.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Register standby patroni service
-      tags: [standby]
-      template:
-        src: templates/srv-patroni.json
-        dest: /etc/consul.d/srv-patroni.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Register node-meta role=standby
-      tags: [register]
-      copy:
-        content: |
-          {"node_meta": {"role":"standby"}}
-        dest: /etc/consul.d/meta-role.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    # change node-meta require restart to take effect immediately
-    - name: Reload/restarted consul
-      tags: [register]
-      systemd:
-        name: consul
-        state: restarted
-        enabled: yes
-
-
-
-
-################################################################
-# PLAY 3: Launch offline (TBD)
-################################################################

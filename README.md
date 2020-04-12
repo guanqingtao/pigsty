@@ -14,6 +14,8 @@ A battery included control node including a series of ansible playbooks and a po
 
 ![](doc/img/pg-instance.png)
 
+![](doc/img/consul.png)
+
 
 
 ## Quick Start
@@ -108,19 +110,10 @@ psql postgres://dbuser_test:dbuser_test@standby.testdb.service.consul:5432/testd
 ## What's Next?
 
 * Explore the monitoring system
+* [How service discovery works](doc/consul_sd.md)
 * Add some load to cluster
-* [Patroni HA Drill](doc/patroni-ha.md)
 * Managing postgres cluster with ansible
-* blah blah...
-
-
-
-
-
-## File structure
-
-* [control](control/) contains resource for control node: yum rpms, scripts, ansible playbooks, monitoring system,...
-* [ansible](ansible/) contains ansible playbooks to manage this database cluster
+* [Patroni HA Drill](doc/patroni-ha.md)
 
 
 
@@ -129,3 +122,5 @@ psql postgres://dbuser_test:dbuser_test@standby.testdb.service.consul:5432/testd
 ## About
 
 Author：Vonng ([fengruohang@outlook.com](mailto:fengruohang@outlook.com))
+
+LICENSE: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)

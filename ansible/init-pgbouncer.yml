@@ -171,22 +171,3 @@
         psql "postgres://{{ biz_user | default(cluster) }}:{{ biz_pass | default(cluster) }}@localhost:6432/{{ biz_db | default(cluster) }}" -Atc 'SELECT 1;'
 
 
-
-    ################################################################
-    # PHASE 4: [register] pgbouncer service to DCS
-    ################################################################
-    - name: Register pgbouncer service
-      tags: [standby]
-      copy:
-        src: templates/srv-pgbouncer.json
-        dest: /etc/consul.d/srv-pgbouncer.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Reload consul
-      tags: [register]
-      systemd:
-        name: consul
-        state: reloaded
-        enabled: yes

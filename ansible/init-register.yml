@@ -1,0 +1,110 @@
+#!/usr/bin/ansible-playbook
+---
+#==============================================================#
+# File      :   init-monitor.yml
+# Mtime     :   2020-03-29
+# Desc      :   init monitor for postgres and pgbouncer
+# Path      :   playbooks/init-monitor.yml
+# Author    :   Vonng(fengruohang@outlook.com)
+#==============================================================#
+# Hosts :
+#   works on group 'cluster'
+#
+# Variables :
+#  biz_db : business database name to be inited, 'testdb' by default
+#  mon_user   =  dbuser_monitor
+#  mon_pass   =  dbuser_monitor
+#==============================================================#
+
+################################################################
+# PLAY 0: Check Inventory and build groups
+################################################################
+- name: Check Inventory
+  gather_facts: false
+  any_errors_fatal: true
+  serial: 1
+  become: yes
+  become_method: sudo
+
+  # local action: check inventory and build group 'primary'
+  hosts: cluster
+  tasks:
+    ################################################################
+    # PHASE 0: [check] local inventory precondition
+    ################################################################
+    - name: Check cluster and version variable
+      tags: [check]
+      shell: "echo 'variable <cluster> and <version> are required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: cluster is not defined or version is not defined
+
+    # seq is cluster-wide unique incremental integer sequence to distinguish instances
+    - name: Check instance variable
+      tags: [check]
+      shell: "echo 'instance variable <seq> is required for init procedure' && exit 1"
+      delegate_to: localhost
+      when: seq is not defined
+
+    # primary instance must be explicitly specified via role=primary
+    - name: Build primary group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: primary
+        role: primary
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role is defined and role == 'primary'
+
+    # standby is the default role if role is not set
+    - name: Build standby group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: standby
+        role: standby
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role is not defined or role == 'standby'
+
+    # offline must be specified explicitly too
+    - name: Build offline group
+      tags: [group]
+      add_host:
+        name: "{{ inventory_hostname }}"
+        groups: offline
+        role: offline
+        instance_name: "{{ seq }}.{{ cluster }}"
+      delegate_to: localhost
+      when: role == 'offline'
+
+    - name: Check primary singleton
+      tags: [check]
+      shell: "echo 'cluster count(primary) != 1: {{ groups.primary }}' && exit 1"
+      delegate_to: localhost
+      when: groups.primary | length != 1
+
+
+    ################################################################
+    # PHASE 0: [config] register scripts
+    ################################################################
+    - name: Copy register scripts
+      tags: [config]
+      template:
+        src: "templates/register.sh"
+        dest: "/pg/bin/register.sh"
+        owner: postgres
+        group: postgres
+        mode: 0700
+
+    ################################################################
+    # PHASE 1: [register] service
+    ################################################################
+    - name: Register services
+      tags: [register]
+      become: yes
+      become_method: sudo
+      become_user: postgres
+      shell: |
+        /pg/bin/register.sh {{ role }} {{ cluster }}
+

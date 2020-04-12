@@ -12,7 +12,7 @@
   "services": [
     {
       "name": "nginx",
-      "tags": ["monitor"],
+      "tags": ["control"],
       "port": 80,
       "check": {
         "tcp": "localhost:80",
@@ -21,7 +21,7 @@
     },
     {
       "name": "prometheus",
-      "tags": ["monitor"],
+      "tags": ["control"],
       "port": 9090,
       "check": {
         "tcp": "localhost:9090",
@@ -30,7 +30,7 @@
     },
     {
       "name": "alertmanager",
-      "tags": ["monitor"],
+      "tags": ["control"],
       "port": 9093,
       "check": {
         "tcp": "localhost:9093",
@@ -39,7 +39,7 @@
     },
     {
       "name": "grafana",
-      "tags": ["monitor"],
+      "tags": ["control"],
       "port": 3000,
       "check": {
         "tcp": "localhost:3000",
@@ -48,7 +48,7 @@
     },
     {
       "name": "consul",
-      "tags": ["consul"],
+      "tags": ["control"],
       "port": 8500,
       "check": {
         "tcp": "localhost:8500",

@@ -1,8 +1,131 @@
 # Postgres Playbooks
 
-这里是Pigsty用到的PG集群管理脚本，包括一系列`bash`脚本与ansible-playbook。
+Here are ansible playbooks, scripts, configuration templates, and other resources to bootstrap a pg cluster.
 
-使用Playbook需要指定对应Cluster的Inventory，这里用于演示的[hosts](hosts)文件定义了名为`test`的数据库集群。
+Playbooks are written in ansible-playbook format. If you are not familiar with ansible, it's fine. just use them as shell scripts. Playbooks are copied to `node0:/home/vagrant/ansible`. 
+
+Targets and behavior of playbooks are controlled by inventory files. where the default inventory [`hosts`](hosts) defines a cluster named `testdb`
+
+
+
+## Quick Start
+
+This will bootstrap a postgres cluster using default inventory [`hosts`](hosts)
+
+```bash
+ssh node0 'cd ansible && ./init-cluster.yml'
+```
+
+The inventory [`hosts`](hosts) defines cluster members (in group `cluster`) and a series of patameters:
+
+```ini
+[cluster]                        ; <--- cluster members (required)
+10.10.10.11 seq=1 role=primary   ; <--- 1.primary.testdb
+10.10.10.12 seq=2 role=standby   ; <--- 2.standby.testdb
+10.10.10.13 seq=3 role=standby   ; <--- 3.standby.testdb
+
+[cluster:vars]                   ; <---- cluster parameters (required)
+cluster=testdb                   ; <---- cluster name
+version=12                       ; <---- postgresql major version
+
+                                 ; <---- cluster boostrap parameters (optional)
+install_opts=""                  ; <---- install postgres opts, e.g --with-postgis
+initdb_opts="--data-checksums"   ; <---- postgres initdb opts, e.g --encoding=UTF8
+repl_user=replicator             ; <---- replication username
+repl_pass=replicator             ; <---- replication password
+mon_user=dbuser_monitor          ; <---- monitoring user username
+mon_pass=dbuser_monitor          ; <---- monitoring user password
+biz_user=dbuser_test             ; <---- default business user username
+biz_pass=dbuser_test             ; <---- default business user password
+biz_db=testdb                    ; <---- default business database name
+```
+
+
+
+## Init Cluster
+
+Here is the top layer play when initializing a new postgres cluster.
+
+```yml
+#!/usr/bin/ansible-playbook
+---
+# install consul, node_exporter, ntp, and other utils
+- import_playbook: init-node.yml
+  tags: node
+
+# install postgres with given major version, setup cluster dir structure
+- import_playbook: init-postgres.yml
+  tags: postgres
+  vars:
+    force: true
+
+# pull up database cluster with patroni 
+- import_playbook: init-patroni.yml
+  tags: init
+  vars:
+    force: true
+    
+# setup and launch pgbouncer the connection pool
+- import_playbook: init-pgbouncer.yml
+  tags: pgbouncer
+
+# setup and launch exporter for postgres and pgbouncer
+- import_playbook: init-monitor.yml
+  tags: monitor
+
+# register all services to consul
+- import_playbook: init-register.yml
+  tags: register
+```
+
+If you don't like patroni's approach, you can also replace `init-patroni.yml` with `init-primary.yml` and `init-standby.yml` manually. Every playbook are IDEMPOTENT, so it's ok to run them separately and retry after failure. 
+
+```yaml
+# do this under node0:/home/vagrant/ansible
+./init-node.yml
+./init-postgres.yml
+./init-primary.yml
+./init-standby.yml
+./init-pgbouncer.yml
+./init-monitor.yml
+./init-register.yml
+```
+
+
+
+
+
+
+
+## Chinese Version
+
+在pigsty目录中执行 `make init` 即可完成对数据库集群的初始化.
+该命令实际是在`node0:/home/vagrant/playbooks`目录中执行了`init-cluster.yml`剧本
+
+* 初始化机器环境：[`init-node.yml`](`init-node.yml`)
+  * 配置使用本地Yum源，安装常用工具，配置Consul, Node Exporter, NTP服务，注册服务。
+  * `init-node.yml` 会将机器名初始化为`{seq}.{cluster}`，例如`1.testdb`, `2.testdb`
+* 机器初始化与PG安装：[`init-postgres.yml`](init-postgres.yml)
+  * 为集群内所有机器安装Postgresql，并初始化指定版本与目录结构
+* 手动初始化主库：[`init-primary.yml`](init-primary.yml)
+  * 检查，清理，配置，拉起，并初始化一个集群主库，并注册服务
+* 手动初始化从库：[`init-standby.yml`](init-standby.yml)
+  * 使用已经拉起的集群主库初始化其余的集群从库，并注册服务
+* 使用Patroni初始化集群：[`init-patroni.yml`](init-patroni.yml)
+  * 如果不希望使用手动初始化，可以通过Patroni自动完成集群的初始化
+  * 和`init-primary.yml`与`init-standby.yml`一样，会拉起并注册Postgres服务
+* 初始化离线库：[init-offline.yml](init-offline.yml)
+  * TBD，目前还需要补充
+* 初始化连接池：[init-pgbouncer.yml](init-pgbouncer.yml)
+* 初始化监控：[init-monitor.yml](init-monitor.yml)
+
+
+
+
+
+
+
+
 
 ### 配置Inventory变量
 

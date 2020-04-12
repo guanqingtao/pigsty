@@ -282,18 +282,3 @@
         state: restarted
         enabled: yes
 
-    - name: Register node_exporter service
-      tags: [node_exporter]
-      copy:
-        src: templates/srv-node_exporter.json
-        dest: /etc/consul.d/srv-node_exporter.json
-        owner: consul
-        group: postgres
-        mode: 0660
-
-    - name: Launch consul service
-      tags: [node_exporter]
-      systemd:
-        name: consul
-        state: reloaded
-

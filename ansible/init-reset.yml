@@ -79,11 +79,12 @@
         path: "/etc/consul.d/{{ item }}"
         state: absent
       with_items:
+        - srv-patroni.json
         - srv-postgres.json
         - srv-pgbouncer.json
         - srv-pg_exporter.json
         - srv-pgbouncer_exporter.json
-        - meta-role.json
+        - srv-{{ cluster }}.json
 
     - name: Restart consul to reload node meta
       tags: [consul]

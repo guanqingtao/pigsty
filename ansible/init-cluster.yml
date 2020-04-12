@@ -13,9 +13,12 @@
   tags: init
   vars:
     force: true
-    
+
 - import_playbook: init-pgbouncer.yml
   tags: pgbouncer
 
 - import_playbook: init-monitor.yml
   tags: monitor
+
+- import_playbook: init-register.yml
+  tags: register

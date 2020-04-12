@@ -1,7 +1,7 @@
 global:
   scrape_interval: 3s
   evaluation_interval: 3s
-  scrape_timeout: 2s
+  scrape_timeout: 3s
 
 alerting:
   alertmanagers:
@@ -41,7 +41,7 @@ scrape_configs:
     # https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
     relabel_configs:
       # allowed role for postgres
-      - source_labels: [__meta_consul_metadata_role]
+      - source_labels: [__meta_consul_service_metadata_role]
         regex: '^(primary|standby|offline)$'
         action: keep
 
@@ -51,25 +51,21 @@ scrape_configs:
         target_label: ip
 
       # label instance
-      - source_labels: [__meta_consul_metadata_role]
+      - source_labels: [__meta_consul_service_metadata_role]
         action: replace
         target_label: role
 
       # instance label: 1.testdb
-      - source_labels: [__meta_consul_node]
+      - source_labels: [__meta_consul_service_metadata_instance]
         action: replace
         target_label: ins
 
       # service label:  primary.testdb
-      - source_labels: [__meta_consul_metadata_role, __meta_consul_node]
+      - source_labels: [__meta_consul_service_metadata_service]
         action: replace
-        regex: '^(primary|standby|offline);\d+\.(.*)$'
-        replacement: '${1}.${2}'
         target_label: srv
 
       # cluster label: testdb
-      - source_labels: [__meta_consul_node]
+      - source_labels: [__meta_consul_service_metadata_cluster]
         action: replace
-        regex: '^\d+\.(.*)$'
-        replacement: '${1}'
         target_label: cls
