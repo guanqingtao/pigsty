@@ -16,8 +16,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 4,
-  "iteration": 1586516319189,
+  "id": 2,
+  "iteration": 1586920653949,
   "links": [
     {
       "asDropdown": false,
@@ -296,7 +296,7 @@
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
           "decimals": 2,
           "mappingType": 1,
-          "pattern": "/Time|instance|cls|srv|job|Status/",
+          "pattern": "/Time|__name__|instance|cls|srv|job|Status/",
           "thresholds": [],
           "type": "hidden",
           "unit": "short"
@@ -339,7 +339,7 @@
       ],
       "targets": [
         {
-          "expr": "(pg_up{cls=\"$cls\"} * 2) +  (1 - pg_in_recovery{cls=\"$cls\"})",
+          "expr": "pg:ins:status",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -670,7 +670,7 @@
       "tableColumn": "ins",
       "targets": [
         {
-          "expr": "pg_in_recovery{cls=\"$cls\"} == 0 and pg_up{cls=\"$cls\"} == 1",
+          "expr": "pg:ins:status{cls=\"$cls\"} == 3",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -750,7 +750,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count((pg_up{cls=\"$cls\"} * 2) +  (1 - pg_in_recovery{cls=\"$cls\"}) == 3)",
+          "expr": "count(pg:ins:status{cls=\"$cls\"} == 3)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -1671,7 +1671,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(node:instance:cpu_usage{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(node:ins:cpu_usage{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -1791,7 +1791,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgb:instance:qps{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pgb:ins:qps{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -1909,7 +1909,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg:instance:tps{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pg:ins:tps{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2027,7 +2027,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgb:instance:rt{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pgb:ins:rt{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2144,7 +2144,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg:instance:numbackends{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pg:ins:numbackends{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2262,7 +2262,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgb:instance:active_servers{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pgb:ins:active_servers{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2380,7 +2380,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgb:instance:active_clients{cls=\"$cls\", role=\"primary\"})",
+          "expr": "sum(pgb:ins:active_clients{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2498,7 +2498,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgb:instance:waiting_clients{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pgb:ins:waiting_clients{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2616,7 +2616,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(node:instance:cpu_usage{cls=\"$cls\", role=\"standby\"})",
+          "expr": "max(node:ins:cpu_usage{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2735,7 +2735,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum(pgb:ins:qps{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2853,7 +2853,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pg:instance:tps{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum(pg:ins:tps{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2971,7 +2971,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgb:instance:rt{cls=\"$cls\", role=\"standby\"})",
+          "expr": "max(pgb:ins:rt{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3088,7 +3088,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg:instance:numbackends{cls=\"$cls\", role=\"standby\"})",
+          "expr": "max(pg:ins:numbackends{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3206,7 +3206,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pgb:instance:active_servers{cls=\"$cls\", role=\"standby\"})",
+          "expr": "max(pgb:ins:active_servers{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3324,7 +3324,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgb:instance:active_clients{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum(pgb:ins:active_clients{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3442,7 +3442,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgb:instance:waiting_clients{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum(pgb:ins:waiting_clients{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3561,7 +3561,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(node:instance:disk_usage{cls=\"$cls\"})",
+          "expr": "max(node:ins:disk_usage{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3680,7 +3680,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\"})",
+          "expr": "sum(pgb:ins:qps{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3798,7 +3798,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pg:instance:tps{cls=\"$cls\"})",
+          "expr": "sum(pg:ins:tps{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4033,7 +4033,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg:instance:wal_rate{cls=\"$cls\", role=\"primary\"})",
+          "expr": "max(pg:ins:wal_rate{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4465,7 +4465,7 @@
       "fontSize": "100%",
       "gridPos": {
         "h": 4,
-        "w": 8,
+        "w": 7,
         "x": 0,
         "y": 25
       },
@@ -4615,8 +4615,8 @@
       "fontSize": "100%",
       "gridPos": {
         "h": 4,
-        "w": 16,
-        "x": 8,
+        "w": 17,
+        "x": 7,
         "y": 25
       },
       "id": 265,
@@ -5855,7 +5855,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (node:instance:cpu_usage{cls=\"$cls\"})",
+          "expr": "sum by (ins) (node:ins:cpu_usage{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -5993,7 +5993,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:instance:mem_usage{cls=\"$cls\"}",
+          "expr": "node:ins:mem_usage{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -6466,7 +6466,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (node:instance:disk_read{cls=\"$cls\"})",
+          "expr": "sum by (ins) (node:ins:disk_read{cls=\"$cls\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6474,7 +6474,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum by (ins) (node:instance:disk_write{cls=\"$cls\"})",
+          "expr": "sum by (ins) (node:ins:disk_write{cls=\"$cls\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6593,7 +6593,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (node:instance:network_transmit{cls=\"$cls\",device!~\"lo\"})",
+          "expr": "sum by (ins) (node:ins:network_transmit{cls=\"$cls\",device!~\"lo\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6601,7 +6601,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum by (ins) (node:instance:network_receive{cls=\"$cls\" ,device!~\"lo\"})",
+          "expr": "sum by (ins) (node:ins:network_receive{cls=\"$cls\" ,device!~\"lo\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
@@ -6724,7 +6724,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pg:instance:tps{cls=\"$cls\"}",
+          "expr": "pg:ins:tps{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -6866,7 +6866,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pgb:instance:qps{cls=\"$cls\"}",
+          "expr": "pgb:ins:qps{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -7006,7 +7006,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (ins) (pg:instance:rollbacks{cls=\"$cls\"})",
+          "expr": "sum by (ins) (pg:ins:rollbacks{cls=\"$cls\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -7115,7 +7115,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pgb:instance:rt{cls=\"$cls\"}",
+          "expr": "pgb:ins:rt{cls=\"$cls\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -7254,7 +7254,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "pgb:instance:qps{cls=\"$cls\", role=\"primary\"}",
+          "expr": "pgb:ins:qps{cls=\"$cls\", role=\"primary\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7263,7 +7263,7 @@
           "refId": "A"
         },
         {
-          "expr": "pgb:instance:qps{cls=\"$cls\", role=\"primary\"} OFFSET 1d",
+          "expr": "pgb:ins:qps{cls=\"$cls\", role=\"primary\"} OFFSET 1d",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7272,7 +7272,7 @@
           "refId": "B"
         },
         {
-          "expr": "pgb:instance:qps{cls=\"$cls\", role=\"primary\"} OFFSET 2d",
+          "expr": "pgb:ins:qps{cls=\"$cls\", role=\"primary\"} OFFSET 2d",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7380,7 +7380,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum(pgb:ins:qps{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7389,7 +7389,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"} OFFSET 1d)",
+          "expr": "sum(pgb:ins:qps{cls=\"$cls\", role=\"standby\"} OFFSET 1d)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7398,7 +7398,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"} OFFSET 2d)",
+          "expr": "sum(pgb:ins:qps{cls=\"$cls\", role=\"standby\"} OFFSET 2d)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -8162,7 +8162,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(pgb:instance:qps{cls=\"$cls\", role=\"primary\"}) / sum(pgb:instance:qps{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum(pgb:ins:qps{cls=\"$cls\", role=\"primary\"}) / sum(pgb:ins:qps{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -9863,7 +9863,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (user) (pgb:instance:active_servers{cls=\"$cls\", role=\"primary\"})",
+          "expr": "sum by (user) (pgb:ins:active_servers{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10002,7 +10002,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (ins) (pgb:instance:active_servers{cls=\"$cls\"})",
+          "expr": "sum by (ins) (pgb:ins:active_servers{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10154,7 +10154,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (user) (pgb:instance:active_clients{cls=\"$cls\", role=\"primary\"})",
+          "expr": "sum by (user) (pgb:ins:active_clients{cls=\"$cls\", role=\"primary\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10292,7 +10292,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (user) (pgb:instance:active_clients{cls=\"$cls\", role=\"standby\"})",
+          "expr": "sum by (user) (pgb:ins:active_clients{cls=\"$cls\", role=\"standby\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10436,7 +10436,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (ins) (pgb:instance:active_clients{cls=\"$cls\"})",
+          "expr": "sum by (ins) (pgb:ins:active_clients{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -10571,7 +10571,7 @@
       "targets": [
         {
           "alias": "",
-          "expr": "sum by (ins) (pgb:instance:waiting_clients{cls=\"$cls\"})",
+          "expr": "sum by (ins) (pgb:ins:waiting_clients{cls=\"$cls\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -12362,7 +12362,7 @@
       }
     }
   ],
-  "refresh": "30s",
+  "refresh": " 2s",
   "schemaVersion": 22,
   "style": "dark",
   "tags": [
@@ -12489,5 +12489,5 @@
   "variables": {
     "list": []
   },
-  "version": 60
+  "version": 10
 }

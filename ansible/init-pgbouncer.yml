@@ -57,6 +57,8 @@
         state: stopped
         enabled: no
 
+    # notice, if you are using user other than pgbouncer
+    # do not use /var/run/pgbouncer as runtime dir
     - name: Remove existing pgbouncer directories
       tags: [clean]
       file:

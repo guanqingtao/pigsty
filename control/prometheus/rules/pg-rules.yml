@@ -4,89 +4,162 @@ groups:
     rules:
 
       # node_exporter
+
+      # cpu
       - record: node:cpu:cpu_usage
         expr: sum without (mode) (1 - irate(node_cpu_seconds_total{mode="idle"}[1m]))
 
-      - record: node:instance:cpu_count
+      - record: node:ins:cpu_count
         expr: count without (cpu, mode) (node_cpu_seconds_total{mode="idle"})
 
-      - record: node:instance:cpu_usage
-        expr: node:cpu:cpu_usage / ignoring(cpu) node:instance:cpu_count
+      - record: node:ins:cpu_usage
+        expr: node:cpu:cpu_usage / ignoring(cpu) node:ins:cpu_count
 
-      - record: node:instance:mem_usage
+      # memory
+      - record: node:ins:mem_usage
         expr: 1 - node_memory_MemFree_bytes{} / node_memory_MemTotal_bytes{}
 
-      - record: node:instance:swap_usage
+      - record: node:ins:swap_usage
         expr: 1 - node_memory_SwapFree_bytes{} / node_memory_SwapTotal_bytes{}
 
-      - record: node:instance:disk_usage
+      # disk
+      - record: node:ins:disk_usage
         expr: 1 - min without (device,fstype) (node_filesystem_free_bytes{} / node_filesystem_size_bytes{})
 
-      - record: node:instance:disk_read
+      - record: node:dev:disk_read
         expr: irate(node_disk_read_bytes_total{}[1m])
 
-      - record: node:instance:disk_write
+      - record: node:dev:disk_write
         expr: irate(node_disk_written_bytes_total{}[1m])
 
-      - record: node:instance:network_transmit
+      - record: node:ins:disk_read
+        expr: sum without (device) (node:device:disk_read)
+
+      - record: node:ins:disk_write
+        expr: sum without (device) (node:device:disk_write)
+
+      # network
+      - record: node:dev:network_tx
         expr: irate(node_network_transmit_bytes_total{}[1m])
 
-      - record: node:instance:network_receive
+      - record: node:dev:network_rx
         expr: irate(node_network_receive_bytes_total{}[1m])
 
-      - record: node:instance:tcp_retrans
-        expr: rate(node_netstat_Tcp_RetransSegs{}[1m]) / (rate(node_netstat_Tcp_InSegs{}[1m]) + rate(node_netstat_Tcp_OutSegs{}[1m]))
+      - record: node:ins:network_tx
+        expr: sum without (device) (node:dev:network_tx{device!="lo"})
+
+      - record: node:ins:network_rx
+        expr: sum without (device) (node:dev:network_rx{device!="lo"})
+
+      - record: node:ins:tcp_retrans
+        expr: irate(node_netstat_Tcp_RetransSegs{}[1m]) / (irate(node_netstat_Tcp_InSegs{}[1m]) + irate(node_netstat_Tcp_OutSegs{}[1m]))
 
 
       # pg_exporter
-      - record: pg:instance:status
+
+      # status
+      - record: pg:ins:status
         expr: (pg_up{} * 2) +  (1 - pg_in_recovery{})
 
-      # application_name must set to standby instance name
-      - record: pg:instance:sync_status
-        expr: max by (ins,cls) (label_replace(pg_repl_sync_status, "ins", "$1", "application_name", "(.+)"))
-      # application_name must set to standby instance name
-      - record: pg:instance:lag
-        expr: max by (ins,cls) (label_replace(pg_repl_lsn{} - pg_repl_replay_lsn{}, "ins", "$1", "application_name", "(.+)"))
+      - record: pg:ins:sync_status # application_name must set to standby ins name
+        expr: max by (ins, srv, cls) (label_replace(pg_repl_sync_status, "ins", "$1", "application_name", "(.+)"))
 
-      - record: pg:instance:tps
-        expr: sum without (datname) (rate(pg_db_xact_total{}[1m]))
+      # replication lag
+      - record: pg:ins:lag # application_name must set to standby ins name
+        expr: max by (ins, srv, cls, role) (label_replace(pg_repl_lsn{} - pg_repl_replay_lsn{}, "ins", "$1", "application_name", "(.+)"))
 
-      - record: pgb:instance:qps
-        expr: sum without (datname)  (rate(pgbouncer_stat_total_query_count{}[1m]))
+      # tps
+      - record: pg:db:tps
+        expr: irate(pg_db_xact_total{}[1m])
 
-      - record: pg:instance:rollbacks
-        expr: sum without (datname)  (rate(pg_db_xact_rollback{}[1m]))
+      - record: pg:ins:tps
+        expr: sum without (datname) (pg:db:tps)
 
-      - record: pgb:instance:rt
-        expr: sum without (datname) (increase(pgbouncer_stat_total_query_time{}[1m]) / increase(pgbouncer_stat_total_query_count{}[1m]) / 1000)
+      - record: pg:srv:tps
+        expr: sum without (datname, instance, ins) (pg:db:tps)
 
-      - record: pg:instance:wal_rate
-        expr: sum without (datname) (rate(pg_lsn{}[1m]))
+      # rollbacks
+      - record: pg:db:rollbacks
+        expr: irate(pg_db_xact_rollback{}[1m])
 
-      - record: pg:instance:age
+      - record: pg:ins:rollbacks
+        expr: sum without (datname) (pg:db:rollbacks)
+
+      # cache hit rate
+      - record: pg:db:hit_rate
+        expr: increase(pg_db_blks_hit{}[1m]) / increase(pg_db_blks_access{}[1m])
+
+      - record: pg:ins:hit_rate
+        expr: sum without (instance, datname) (increase(pg_db_blks_hit{}[1m])) / sum without (instance, datname) (increase(pg_db_blks_access{}[1m]))
+
+      # wal rate
+      - record: pg:ins:wal_rate
+        expr: sum without (datname) (irate(pg_lsn{}[1m]))
+
+      # age
+      - record: pg:ins:age
         expr: max without (datname) (pg_database_age{})
 
-      - record: pg:instance:numbackends
+      # backends
+      - record: pg:ins:numbackends
         expr: sum without (datname) (pg_db_numbackends{})
 
-      - record: pg:instance:active_servers
+      - record: pg:ins:active_servers
         expr: sum without (datname) (pg_activity_count{state="active"})
 
-      - record: pg:instance:idle_xact_counts
-        expr: sum without (datname) (pg_activity_count{state=~"idle in transaction.*"})
+      # idle in xact
+      - record: pg:ins:idle_xact_counts
+        expr: sum without (datname, state) (pg_activity_count{state=~"idle in transaction.*"})
 
-      - record: pgb:instance:active_servers
-        expr: sum without (datname) (pgbouncer_pool_active_servers{})
+      # slave count
+      - record: pg:ins:slaves
+        expr: max without(state) (pg_repl_state_count{state="streaming"})
 
-      - record: pgb:instance:active_clients
-        expr: sum without (datname) (pgbouncer_pool_active_servers{})
+      # cluster level
+      - record: pg:cls:partitions
+        expr: count by (cls) (pg:ins:status{} == 3)
 
-      - record: pgb:instance:waiting_clients
-        expr: sum without (datname) (pgbouncer_pool_waiting_clients{})
-
-      - record: pg:cluster:partitions
-        expr: count by (cls) (pg:instance:status{} == 3)
-
-      - record: pg:cluster:size
+      - record: pg:cls:size
         expr: count by (cls) (pg_up{}==1)
+
+
+
+      # pgbouncer
+      # qps
+      - record: pgb:db:qps
+        expr: irate(pgbouncer_stat_total_query_count{}[1m])
+
+      - record: pgb:ins:qps
+        expr: sum without (datname)  (pgb:db:qps)
+
+      # rt
+      - record: pgb:db:rt
+        expr: irate(pgbouncer_stat_total_query_time{}[1m]) / irate(pgbouncer_stat_total_query_count{}[1m]) / 1000
+
+      - record: pgb:ins:rt
+        expr: sum without(datname) (irate(pgbouncer_stat_total_query_time{}[1m])) / sum without(datname) (irate(pgbouncer_stat_total_query_count{}[1m])) / 1000
+
+      # io
+      - record: pgb:db:tx
+        expr: irate(pgbouncer_stat_total_sent{datname!="pgbouncer"}[1m])
+
+      - record: pgb:db:rx
+        expr: irate(pgbouncer_stat_total_received{datname!="pgbouncer"}[1m])
+
+      - record: pgb:ins:tx
+        expr: sum without(datname) (pgb:db:tx)
+
+      - record: pgb:ins:rx
+        expr: sum without(datname) (pgb:db:rx)
+
+
+      # pool
+      - record: pgb:ins:active_servers
+        expr: sum without (datname, user) (pgbouncer_pool_active_servers{})
+
+      - record: pgb:ins:active_clients
+        expr: sum without (datname, user) (pgbouncer_pool_active_servers{})
+
+      - record: pgb:ins:waiting_clients
+        expr: sum without (datname, user) (pgbouncer_pool_waiting_clients{})
+

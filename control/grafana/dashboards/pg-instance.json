@@ -18,8 +18,8 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 1,
-  "id": 2,
-  "iteration": 1586516240910,
+  "id": 1,
+  "iteration": 1586921201149,
   "links": [
     {
       "icon": "external link",
@@ -474,7 +474,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Sibling Instances",
+      "title": "Siblings",
       "transform": "table",
       "transparent": true,
       "type": "table"
@@ -1076,7 +1076,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "avg by (instance) (node_network_up{ins=\"$ins\", device!=\"lo\"})",
+          "expr": "max by (ins) (node_network_up{ins=\"$ins\", device!=\"lo\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2020,7 +2020,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "node:instance:cpu_count{ins=\"$ins\"}",
+          "expr": "node:ins:cpu_count{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -2373,7 +2373,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "node:instance:mem_usage{ins=\"$ins\"}",
+          "expr": "node:ins:mem_usage{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -2493,7 +2493,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "node:instance:swap_usage{ins=\"$ins\"}",
+          "expr": "node:ins:swap_usage{ins=\"$ins\"}",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -2581,7 +2581,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max by (instance) (node:instance:disk_usage{ins=\"$ins\"})",
+          "expr": "max by (ins) (node:ins:disk_usage{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -2928,7 +2928,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum by (instance) (irate(pg_db_xact_total{ins=\"$ins\"}[1m]))",
+          "expr": "pg:ins:tps{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -2944,7 +2944,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3044,7 +3046,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(irate(pgbouncer_stat_total_query_count{ins=\"$ins\", datname!=\"pgbouncer\"}[1m]))",
+          "expr": "pgb:ins:qps{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -3060,7 +3062,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "{{ ins }}",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3160,7 +3164,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "pgb:instance:rt{ins=\"$ins\"}",
+          "expr": "pgb:ins:rt{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -3277,7 +3281,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max by (instance) (pg_repl_lsn - pg_repl_replay_lsn{ins=\"$ins\"})",
+          "expr": "max by (ins) (pg_repl_lsn - pg_repl_replay_lsn{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3395,7 +3399,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum by (instance) (pgb:instance:active_servers{ins=\"$ins\"})",
+          "expr": "sum by (ins) (pgb:ins:active_servers{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3512,7 +3516,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "pg:instance:numbackends{ins=\"$ins\"}",
+          "expr": "pg:ins:numbackends{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -3630,7 +3634,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(pgbouncer_pool_waiting_clients{ins=\"$ins\"})",
+          "expr": "sum by (ins) (pgb:ins:waiting_clients{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -3646,7 +3650,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -3746,7 +3752,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max(pg_activity_max_conn_duration{ins=\"$ins\"}) ",
+          "expr": "max by (ins) (pg_activity_max_conn_duration{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4217,7 +4223,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "pg:instance:wal_rate{ins=\"$ins\"}",
+          "expr": "pg:ins:wal_rate{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -4334,7 +4340,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum by (instance)(increase(pg_db_blks_hit{ins=\"$ins\"}[1m])) / sum by (instance)(increase(pg_db_blks_access{ins=\"$ins\"}[1m]))",
+          "expr": "pg:ins:hit_rate{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -4350,7 +4356,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -4450,7 +4458,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum by (instance) (irate(pg_db_xact_rollback{ins=\"$ins\"}[1m]))  / sum by (instance) (irate(pg_db_xact_total{ins=\"$ins\"}[1m])) ",
+          "expr": "pg:ins:rollbacks{ins=\"$ins\"} / pg:ins:tps{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -4466,7 +4474,9 @@
               "type": "fill"
             }
           ],
+          "interval": "",
           "intervalFactor": 1,
+          "legendFormat": "",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -4566,7 +4576,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum by (instance) (pg_activity_count{state=~\"idle in transaction.*\", ins=\"$ins\"})",
+          "expr": "sum by (ins) (pg:ins:idle_xact_counts{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4582,9 +4592,10 @@
               "type": "fill"
             }
           ],
+          "instant": false,
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "",
+          "legendFormat": "{{ ins }}",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -4684,7 +4695,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "max by (instance) (pg_activity_max_conn_duration{ins=\"$ins\"})",
+          "expr": "max by (ins) (pg_activity_max_conn_duration{ins=\"$ins\"})",
           "format": "time_series",
           "groupBy": [
             {
@@ -4769,24 +4780,24 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 5,
-        "w": 12,
+        "w": 10,
         "x": 0,
         "y": 20
       },
       "hiddenSeries": false,
       "id": 253,
       "legend": {
-        "alignAsTable": true,
+        "alignAsTable": false,
         "avg": false,
-        "current": true,
-        "max": true,
+        "current": false,
+        "max": false,
         "min": false,
-        "rightSide": true,
+        "rightSide": false,
         "show": true,
         "sort": "current",
         "sortDesc": true,
         "total": false,
-        "values": true
+        "values": false
       },
       "lines": true,
       "linewidth": 0,
@@ -4897,8 +4908,8 @@
       "fontSize": "100%",
       "gridPos": {
         "h": 5,
-        "w": 12,
-        "x": 12,
+        "w": 14,
+        "x": 10,
         "y": 20
       },
       "id": 255,
@@ -4927,24 +4938,7 @@
             "rgba(50, 172, 45, 0.97)"
           ],
           "decimals": 2,
-          "pattern": "/__name__/",
-          "thresholds": [],
-          "type": "hidden",
-          "unit": "short"
-        },
-        {
-          "alias": "",
-          "align": "auto",
-          "colorMode": null,
-          "colors": [
-            "rgba(245, 54, 54, 0.9)",
-            "rgba(237, 129, 40, 0.89)",
-            "rgba(50, 172, 45, 0.97)"
-          ],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "/exporter/",
+          "pattern": "/__name__|team|instance|cls|ip|job|role|srv|Value/",
           "thresholds": [],
           "type": "hidden",
           "unit": "short"
@@ -4981,7 +4975,7 @@
       "type": "table"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "datasource": null,
       "gridPos": {
         "h": 1,
@@ -4990,437 +4984,438 @@
         "y": 25
       },
       "id": 272,
-      "panels": [],
+      "panels": [
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": "Prometheus",
+          "decimals": 1,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 14,
+            "w": 13,
+            "x": 0,
+            "y": 26
+          },
+          "hiddenSeries": false,
+          "id": 274,
+          "legend": {
+            "alignAsTable": true,
+            "avg": true,
+            "current": true,
+            "max": true,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "sort": "max",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": true,
+          "targets": [
+            {
+              "expr": "increase(pg_exporter_query_scrape_duration{ins=\"$ins\"}[1m]) / increase(pg_exporter_query_scrape_total_count{ins=\"$ins\"}[1m])",
+              "interval": "",
+              "legendFormat": "{{query}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [
+            {
+              "colorMode": "warning",
+              "fill": true,
+              "line": true,
+              "op": "gt",
+              "value": 0.1,
+              "yaxis": "left"
+            },
+            {
+              "colorMode": "critical",
+              "fill": true,
+              "line": true,
+              "op": "gt",
+              "value": 1,
+              "yaxis": "left"
+            }
+          ],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Query Duration",
+          "tooltip": {
+            "shared": true,
+            "sort": 2,
+            "value_type": "individual"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "decimals": null,
+              "format": "s",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "description": "",
+          "fill": 2,
+          "fillGradient": 2,
+          "gridPos": {
+            "h": 7,
+            "w": 6,
+            "x": 13,
+            "y": 26
+          },
+          "hiddenSeries": false,
+          "id": 277,
+          "legend": {
+            "avg": false,
+            "current": false,
+            "max": false,
+            "min": false,
+            "show": true,
+            "total": false,
+            "values": false
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [
+            {
+              "alias": "Error",
+              "color": "#E02F44",
+              "yaxis": 2
+            }
+          ],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": true,
+          "targets": [
+            {
+              "expr": "increase(pg_exporter_server_scrape_total_count{ins=\"$ins\"}[1m])",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "PG-Count",
+              "refId": "A"
+            },
+            {
+              "expr": "increase(pg_exporter_server_scrape_error_count{ins=\"$ins\"}[1m])",
+              "interval": "",
+              "legendFormat": "PG-Error",
+              "refId": "B"
+            },
+            {
+              "expr": "increase(pgbouncer_exporter_server_scrape_total_count{ins=\"$ins\"}[1m])",
+              "interval": "",
+              "intervalFactor": 2,
+              "legendFormat": "PGB-Count",
+              "refId": "C"
+            },
+            {
+              "expr": "increase(pgbouncer_exporter_server_scrape_error_count{ins=\"$ins\"}[1m])",
+              "interval": "",
+              "legendFormat": "PGB-Error",
+              "refId": "D"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Scrape Per Minute",
+          "tooltip": {
+            "shared": true,
+            "sort": 2,
+            "value_type": "individual"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": "0.1",
+              "min": "0",
+              "show": true
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "decimals": 0,
+          "fill": 1,
+          "fillGradient": 0,
+          "gridPos": {
+            "h": 7,
+            "w": 5,
+            "x": 19,
+            "y": 26
+          },
+          "hiddenSeries": false,
+          "id": 276,
+          "legend": {
+            "alignAsTable": true,
+            "avg": false,
+            "current": false,
+            "max": true,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "sideWidth": null,
+            "sort": "max",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": false,
+          "steppedLine": false,
+          "targets": [
+            {
+              "expr": "increase(pg_exporter_query_scrape_error_count{ins=\"$ins\"}[20s])",
+              "interval": "",
+              "legendFormat": "{{query}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [
+            {
+              "colorMode": "critical",
+              "fill": true,
+              "line": true,
+              "op": "gt",
+              "value": 1,
+              "yaxis": "left"
+            }
+          ],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Query Errors",
+          "tooltip": {
+            "shared": true,
+            "sort": 2,
+            "value_type": "individual"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "decimals": 0,
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": "0",
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        },
+        {
+          "aliasColors": {},
+          "bars": false,
+          "dashLength": 10,
+          "dashes": false,
+          "datasource": null,
+          "decimals": 0,
+          "fill": 1,
+          "fillGradient": 2,
+          "gridPos": {
+            "h": 7,
+            "w": 11,
+            "x": 13,
+            "y": 33
+          },
+          "hiddenSeries": false,
+          "id": 275,
+          "legend": {
+            "alignAsTable": true,
+            "avg": false,
+            "current": true,
+            "max": false,
+            "min": false,
+            "rightSide": true,
+            "show": true,
+            "sort": "current",
+            "sortDesc": true,
+            "total": false,
+            "values": true
+          },
+          "lines": true,
+          "linewidth": 1,
+          "nullPointMode": "null",
+          "options": {
+            "dataLinks": []
+          },
+          "percentage": false,
+          "pointradius": 2,
+          "points": false,
+          "renderer": "flot",
+          "seriesOverrides": [],
+          "spaceLength": 10,
+          "stack": true,
+          "steppedLine": true,
+          "targets": [
+            {
+              "expr": "pg_exporter_query_scrape_metric_count{ins=\"$ins\"}",
+              "interval": "",
+              "legendFormat": "{{query}}",
+              "refId": "A"
+            }
+          ],
+          "thresholds": [],
+          "timeFrom": null,
+          "timeRegions": [],
+          "timeShift": null,
+          "title": "Metrics Count",
+          "tooltip": {
+            "shared": true,
+            "sort": 2,
+            "value_type": "individual"
+          },
+          "transparent": true,
+          "type": "graph",
+          "xaxis": {
+            "buckets": null,
+            "mode": "time",
+            "name": null,
+            "show": true,
+            "values": []
+          },
+          "yaxes": [
+            {
+              "decimals": 0,
+              "format": "none",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": true
+            },
+            {
+              "format": "short",
+              "label": null,
+              "logBase": 1,
+              "max": null,
+              "min": null,
+              "show": false
+            }
+          ],
+          "yaxis": {
+            "align": false,
+            "alignLevel": null
+          }
+        }
+      ],
       "title": "Exporter",
       "type": "row"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "decimals": 1,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 14,
-        "w": 13,
-        "x": 0,
-        "y": 26
-      },
-      "hiddenSeries": false,
-      "id": 274,
-      "legend": {
-        "alignAsTable": true,
-        "avg": true,
-        "current": true,
-        "max": true,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "sort": "max",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": true,
-      "targets": [
-        {
-          "expr": "increase(pg_exporter_query_scrape_duration{ins=\"$ins\"}[1m]) / increase(pg_exporter_query_scrape_total_count{ins=\"$ins\"}[1m])",
-          "interval": "",
-          "legendFormat": "{{query}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "warning",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 0.1,
-          "yaxis": "left"
-        },
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 1,
-          "yaxis": "left"
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Query Duration",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": null,
-          "format": "s",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "description": "",
-      "fill": 2,
-      "fillGradient": 2,
-      "gridPos": {
-        "h": 7,
-        "w": 6,
-        "x": 13,
-        "y": 26
-      },
-      "hiddenSeries": false,
-      "id": 277,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [
-        {
-          "alias": "Error",
-          "color": "#E02F44",
-          "yaxis": 2
-        }
-      ],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": true,
-      "targets": [
-        {
-          "expr": "increase(pg_exporter_server_scrape_total_count{ins=\"$ins\"}[1m])",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "PG-Count",
-          "refId": "A"
-        },
-        {
-          "expr": "increase(pg_exporter_server_scrape_error_count{ins=\"$ins\"}[1m])",
-          "interval": "",
-          "legendFormat": "PG-Error",
-          "refId": "B"
-        },
-        {
-          "expr": "increase(pgbouncer_exporter_server_scrape_total_count{ins=\"$ins\"}[1m])",
-          "interval": "",
-          "intervalFactor": 2,
-          "legendFormat": "PGB-Count",
-          "refId": "C"
-        },
-        {
-          "expr": "increase(pgbouncer_exporter_server_scrape_error_count{ins=\"$ins\"}[1m])",
-          "interval": "",
-          "legendFormat": "PGB-Error",
-          "refId": "D"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Scrape Per Minute",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": "0.1",
-          "min": "0",
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 0,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 5,
-        "x": 19,
-        "y": 26
-      },
-      "hiddenSeries": false,
-      "id": 276,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": false,
-        "max": true,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "sideWidth": null,
-        "sort": "max",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "increase(pg_exporter_query_scrape_error_count{ins=\"$ins\"}[20s])",
-          "interval": "",
-          "legendFormat": "{{query}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [
-        {
-          "colorMode": "critical",
-          "fill": true,
-          "line": true,
-          "op": "gt",
-          "value": 1,
-          "yaxis": "left"
-        }
-      ],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Query Errors",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "decimals": 0,
-      "fill": 1,
-      "fillGradient": 2,
-      "gridPos": {
-        "h": 7,
-        "w": 11,
-        "x": 13,
-        "y": 33
-      },
-      "hiddenSeries": false,
-      "id": 275,
-      "legend": {
-        "alignAsTable": true,
-        "avg": false,
-        "current": true,
-        "max": false,
-        "min": false,
-        "rightSide": true,
-        "show": true,
-        "sort": "current",
-        "sortDesc": true,
-        "total": false,
-        "values": true
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": true,
-      "steppedLine": true,
-      "targets": [
-        {
-          "expr": "pg_exporter_query_scrape_metric_count{ins=\"$ins\"}",
-          "interval": "",
-          "legendFormat": "{{query}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Metrics Count",
-      "tooltip": {
-        "shared": true,
-        "sort": 2,
-        "value_type": "individual"
-      },
-      "transparent": true,
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "none",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
     },
     {
       "collapsed": false,
@@ -5429,7 +5424,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 26
       },
       "id": 119,
       "panels": [],
@@ -5459,7 +5454,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 27
       },
       "hiddenSeries": false,
       "id": 120,
@@ -5594,7 +5589,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 27
       },
       "hiddenSeries": false,
       "id": 122,
@@ -5774,7 +5769,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 48
+        "y": 34
       },
       "hiddenSeries": false,
       "id": 121,
@@ -5993,7 +5988,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 48
+        "y": 34
       },
       "hiddenSeries": false,
       "id": 123,
@@ -6182,7 +6177,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 55
+        "y": 41
       },
       "hiddenSeries": false,
       "id": 264,
@@ -6326,7 +6321,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 55
+        "y": 41
       },
       "hiddenSeries": false,
       "id": 125,
@@ -6368,7 +6363,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(node_disk_read_bytes_total{ins=\"$ins\"}[1m])",
+          "expr": "irate(node:dev:disk_read{ins=\"$ins\"}[1m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -6376,7 +6371,7 @@
           "refId": "B"
         },
         {
-          "expr": "irate(node_disk_written_bytes_total{ins=\"$ins\"}[1m])",
+          "expr": "irate(node:dev:disk_write{ins=\"$ins\"}[1m])",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -6454,7 +6449,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 62
+        "y": 48
       },
       "hiddenSeries": false,
       "id": 262,
@@ -6644,7 +6639,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 62
+        "y": 48
       },
       "hiddenSeries": false,
       "id": 124,
@@ -6686,7 +6681,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "node:instance:network_transmit{ins=\"$ins\"}",
+          "expr": "node:dev:network_tx{ins=\"$ins\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -6694,7 +6689,7 @@
           "refId": "B"
         },
         {
-          "expr": "node:instance:network_receive{ins=\"$ins\"}",
+          "expr": "node:dev:network_rx{ins=\"$ins\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -6771,7 +6766,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 69
+        "y": 55
       },
       "hiddenSeries": false,
       "id": 138,
@@ -6803,11 +6798,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(node_netstat_Tcp_RetransSegs{ins=\"$ins\"}[1m]) / (rate(node_netstat_Tcp_InSegs{ins=\"$ins\"}[1m]) + rate(node_netstat_Tcp_OutSegs{ins=\"$ins\"}[1m]))",
+          "expr": "node:ins:tcp_retrans{ins=\"$ins\"}",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Retransmit Rate",
+          "legendFormat": "{{ ins }}",
           "refId": "A"
         }
       ],
@@ -6882,7 +6877,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 69
+        "y": 55
       },
       "hiddenSeries": false,
       "id": 32,
@@ -6892,7 +6887,7 @@
         "max": false,
         "min": false,
         "rightSide": false,
-        "show": false,
+        "show": true,
         "total": false,
         "values": false
       },
@@ -6910,12 +6905,12 @@
       "renderer": "flot",
       "seriesOverrides": [
         {
-          "alias": "IN",
+          "alias": "/IN-.*/",
           "color": "#E02F44",
           "transform": "negative-Y"
         },
         {
-          "alias": "OUT",
+          "alias": "/OUT-.*/",
           "color": "#3274D9"
         }
       ],
@@ -6924,14 +6919,15 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance) (irate(pgbouncer_stat_total_sent{ins=\"$ins\", datname!=\"pgbouncer\"}[1m]))",
+          "expr": "pgb:db:tx{ins=\"$ins\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "OUT",
+          "legendFormat": "OUT-{{datname}}",
           "refId": "B"
         },
         {
-          "expr": "sum by (instance) (irate(pgbouncer_stat_total_received{ins=\"$ins\", datname!=\"pgbouncer\"}[1m]))",
+          "expr": "pgb:db:rx{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -6949,7 +6945,7 @@
           ],
           "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "IN",
+          "legendFormat": "IN-{{datname}}",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -7021,7 +7017,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 76
+        "y": 62
       },
       "id": 43,
       "panels": [],
@@ -7046,7 +7042,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 77
+        "y": 63
       },
       "hiddenSeries": false,
       "id": 4,
@@ -7079,7 +7075,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "rate(pg_db_xact_total{ins=\"$ins\"}[1m])",
+          "expr": "pg:db:tps{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -7096,6 +7092,7 @@
             }
           ],
           "hide": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "{{datname}}",
           "orderByTime": "ASC",
@@ -7181,7 +7178,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 77
+        "y": 63
       },
       "hiddenSeries": false,
       "id": 215,
@@ -7217,7 +7214,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance) (irate(pgbouncer_stat_total_query_count{ins=\"$ins\", datname!=\"pgbouncer\"}[1m]))",
+          "expr": "pgb:ins:qps{ins=\"$ins\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7226,7 +7223,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum by (instance) (irate(pgbouncer_stat_total_query_count{ins=\"$ins\", datname!=\"pgbouncer\"}[1m] OFFSET 1d))",
+          "expr": "pgb:ins:qps{ins=\"$ins\"} OFFSET 1d",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7235,7 +7232,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum by (instance) (irate(pgbouncer_stat_total_query_count{ins=\"$ins\", datname!=\"pgbouncer\"}[1m] OFFSET 2d))",
+          "expr": "pgb:ins:qps{ins=\"$ins\"} OFFSET 2d",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7305,7 +7302,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 85
+        "y": 71
       },
       "hiddenSeries": false,
       "id": 232,
@@ -7348,14 +7345,15 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(pg_db_xact_rollback{ins=\"$ins\"}[1m])",
+          "expr": "pg:db:rollbacks{ins=\"$ins\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
           "legendFormat": "{{datname}}-Count",
           "refId": "C"
         },
         {
-          "expr": "increase(pg_db_xact_rollback{ins=\"$ins\"}[1m]) /  increase(pg_db_xact_total{ins=\"$ins\"}[1m])",
+          "expr": "pg:db:rollbacks{ins=\"$ins\"} / pg:db:tps{ins=\"$ins\"}",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -7426,7 +7424,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 85
+        "y": 71
       },
       "hiddenSeries": false,
       "id": 30,
@@ -7436,7 +7434,7 @@
         "max": false,
         "min": false,
         "rightSide": false,
-        "show": false,
+        "show": true,
         "total": false,
         "values": false
       },
@@ -7458,7 +7456,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance) (increase(pgbouncer_stat_total_query_time{ins=\"$ins\", datname!=\"pgbouncer\"}[1m])) / sum by (instance)(increase(pgbouncer_stat_total_query_count{ins=\"$ins\", datname!=\"pgbouncer\"}[1m]))",
+          "expr": "pgb:db:rt{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -7476,7 +7474,7 @@
           ],
           "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{datname}}",
           "orderByTime": "ASC",
           "policy": "default",
           "refId": "A",
@@ -7555,7 +7553,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 92
+        "y": 78
       },
       "hiddenSeries": false,
       "id": 89,
@@ -7611,7 +7609,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "irate(pg_lsn{ins=\"$ins\"}[1m])",
+          "expr": "pg:ins:wal_rate{ins=\"$ins\"}",
           "format": "time_series",
           "groupBy": [
             {
@@ -7730,7 +7728,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 92
+        "y": 78
       },
       "hiddenSeries": false,
       "id": 33,
@@ -7762,10 +7760,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (instance)(increase(pg_db_blks_hit{ins=\"$ins\"}[1m])) / sum by (instance)(increase(pg_db_blks_access{ins=\"$ins\"}[1m]))",
+          "expr": "pg:db:hit_rate{ins=\"$ins\"}",
           "format": "time_series",
+          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "{{instance}}",
+          "legendFormat": "{{ins}}",
           "refId": "B"
         }
       ],
@@ -7835,7 +7834,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 99
+        "y": 85
       },
       "hiddenSeries": false,
       "id": 247,
@@ -8014,7 +8013,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 99
+        "y": 85
       },
       "hiddenSeries": false,
       "id": 248,
@@ -8227,7 +8226,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 107
+        "y": 93
       },
       "id": 246,
       "panels": [],
@@ -8255,7 +8254,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 108
+        "y": 94
       },
       "hiddenSeries": false,
       "id": 9,
@@ -8445,7 +8444,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 108
+        "y": 94
       },
       "hiddenSeries": false,
       "id": 244,
@@ -8638,7 +8637,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 116
+        "y": 102
       },
       "hiddenSeries": false,
       "id": 8,
@@ -8787,7 +8786,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 116
+        "y": 102
       },
       "hiddenSeries": false,
       "id": 107,
@@ -8930,7 +8929,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 123
+        "y": 109
       },
       "id": 164,
       "panels": [],
@@ -8961,7 +8960,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 124
+        "y": 110
       },
       "hiddenSeries": false,
       "id": 251,
@@ -9132,7 +9131,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 124
+        "y": 110
       },
       "hiddenSeries": false,
       "id": 159,
@@ -9283,7 +9282,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 131
+        "y": 117
       },
       "hiddenSeries": false,
       "id": 157,
@@ -9463,7 +9462,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 131
+        "y": 117
       },
       "hiddenSeries": false,
       "id": 128,
@@ -9643,7 +9642,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 138
+        "y": 124
       },
       "hiddenSeries": false,
       "id": 250,
@@ -9793,7 +9792,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 138
+        "y": 124
       },
       "hiddenSeries": false,
       "id": 136,
@@ -10136,7 +10135,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 145
+        "y": 131
       },
       "hiddenSeries": false,
       "id": 47,
@@ -10286,7 +10285,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 145
+        "y": 131
       },
       "hiddenSeries": false,
       "id": 155,
@@ -10413,7 +10412,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 152
+        "y": 138
       },
       "id": 84,
       "panels": [],
@@ -10429,7 +10428,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 153
+        "y": 139
       },
       "id": 235,
       "links": [],
@@ -10548,7 +10547,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 153
+        "y": 139
       },
       "hiddenSeries": false,
       "id": 86,
@@ -10700,7 +10699,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 159
+        "y": 145
       },
       "hiddenSeries": false,
       "id": 88,
@@ -10849,7 +10848,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 160
+        "y": 146
       },
       "hiddenSeries": false,
       "id": 29,
@@ -11002,7 +11001,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 166
+        "y": 152
       },
       "hiddenSeries": false,
       "id": 210,
@@ -11140,7 +11139,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 167
+        "y": 153
       },
       "hiddenSeries": false,
       "id": 129,
@@ -11282,7 +11281,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 174
+        "y": 160
       },
       "id": 185,
       "panels": [
@@ -12071,7 +12070,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 175
+        "y": 161
       },
       "id": 39,
       "panels": [],
@@ -12091,7 +12090,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 176
+        "y": 162
       },
       "hiddenSeries": false,
       "id": 175,
@@ -12259,7 +12258,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 176
+        "y": 162
       },
       "hiddenSeries": false,
       "id": 176,
@@ -12427,7 +12426,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 183
+        "y": 169
       },
       "hiddenSeries": false,
       "id": 177,
@@ -12604,7 +12603,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 183
+        "y": 169
       },
       "hiddenSeries": false,
       "id": 178,
@@ -12817,7 +12816,7 @@
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 190
+        "y": 176
       },
       "hiddenSeries": false,
       "id": 75,
@@ -12956,7 +12955,7 @@
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 190
+        "y": 176
       },
       "hiddenSeries": false,
       "id": 213,
@@ -13051,7 +13050,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 190
+        "y": 176
       },
       "hiddenSeries": false,
       "id": 179,
@@ -13193,7 +13192,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 197
+        "y": 183
       },
       "id": 228,
       "panels": [],
@@ -13212,7 +13211,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 198
+        "y": 184
       },
       "hiddenSeries": false,
       "id": 225,
@@ -13306,7 +13305,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 198
+        "y": 184
       },
       "hiddenSeries": false,
       "id": 230,
@@ -13399,7 +13398,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 206
+        "y": 192
       },
       "hiddenSeries": false,
       "id": 231,
@@ -13492,7 +13491,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 206
+        "y": 192
       },
       "hiddenSeries": false,
       "id": 229,
@@ -13808,5 +13807,5 @@
   "variables": {
     "list": []
   },
-  "version": 56
+  "version": 10
 }

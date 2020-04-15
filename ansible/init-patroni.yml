@@ -222,6 +222,11 @@
         group: root
         mode: 0644
 
+    - name: Enable watchdog
+      tags: [config]
+      shell: |
+        modprobe softdog
+        chown postgres /dev/watchdog
 
 
 ################################################################

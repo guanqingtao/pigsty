@@ -7,7 +7,7 @@ vagrant destroy -f --parallel
 # setup
 vagrant up node0 node1 node2 node3
 bin/setup-ssh.sh
-ssh node0 sudo /vagrant/control/setup.sh &
+ssh node0 sudo /vagrant/control/setup.sh
 
 # copy yum cache to localhost to accelerate next bootsrtrap (if not exists)
 if [[ ! -d control/yum ]]; then

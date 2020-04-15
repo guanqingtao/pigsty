@@ -11,7 +11,7 @@ groups:
           urgency: P0
         annotations:
           summary: "P0 Postgres Primary Instance Down: {{$labels.ins}}"
-          description: "pg_up = {{ $value }} {{$labels.ins}}"
+          description: "pg_up = {{ $value }} {{$labels.ins}}  http://g.pigsty/d/pg_instance/pg-instance?var-ins={{$labels.ins}}"
 
       # standby|standby ins down for 10s triggers a P1 alert
       - alert: PG_STANDBY_DOWN
@@ -22,7 +22,7 @@ groups:
           urgency: P1
         annotations:
           summary: "P1 Postgres Standby Instance Down: {{$labels.ins}}"
-          description: "pg_up = {{ $value }} {{$labels.ins}}"
+          description: "pg_up = {{ $value }} {{$labels.ins}}  http://g.pigsty/d/pg_instance/pg-instance?var-ins={{$labels.ins}}"
 
       # primary pgbouncer down for 10s triggers a P0 alert
       - alert: PGB_PRIMARY_DOWN
@@ -33,7 +33,7 @@ groups:
           urgency: P0
         annotations:
           summary: "P0 Pgbouncer Primary Instance Down: {{$labels.ins}}"
-          description: "pgbouncer_up = {{ $value }} {{$labels.ins}}"
+          description: "pgbouncer_up = {{ $value }} {{$labels.ins}}  http://g.pigsty/d/pg_instance/pg-instance?var-ins={{$labels.ins}}"
 
       # standby pgbouncer down for 10s triggers a P1 alert
       - alert: PGB_STANDBY_DOWN
@@ -44,7 +44,19 @@ groups:
           urgency: P1
         annotations:
           summary: "P1 Pgbouncer Standby Instance Down: {{$labels.ins}}"
-          description: "pgbouncer_up = {{ $value }} {{$labels.ins}}"
+          description: "pgbouncer_up = {{ $value }} {{$labels.ins}}  http://g.pigsty/d/pg_instance/pg-instance?var-ins={{$labels.ins}}"
+
+
+      - alert: PG_CLUSTER_PARTITION
+        expr: pg:cls:partitions > 1
+        for: 10s
+        labels:
+          team: DBA
+          urgency: P1
+        annotations:
+          summary: "P1 Postgres Cluster {{$labels.cls}} Partition {{ $value }}"
+          description: "pg:cls:partitions = {{ $value }} {{$labels.cls}}  http://g.pigsty/d/pg_cluster/pg-cluster?var-cls={{$labels.cls}}"
+
 
       # exporter down for 1m triggers a P1 alert
       - alert: PG_EXPORTER_DOWN
@@ -55,20 +67,20 @@ groups:
           urgency: P1
         annotations:
           summary: "P1 Exporter Down: {{$labels.ins}} {{$labels.port}}"
-          description: "port = {{$labels.port}}, {{$labels.ins}}"
+          description: "port = {{$labels.port}}, {{$labels.ins}} http://g.pigsty/d/pg_instance/pg-instance?var-ins={{$labels.ins}}&panelId=275"
 
 
       # DELAY ALERTS
       # replication break for 1m triggers a P0 alert. auto-resolved after 10 minutes.
       - alert: PG_REPLICATION_BREAK
-        expr: pg_repl_state_count{state="streaming"} - (pg_repl_state_count{state="streaming"} OFFSET 10m) < 0
+        expr: pg:ins:slaves - pg:ins:slaves OFFSET 1m < 0
         for: 1m
         labels:
           team: DBA
           urgency: P0
         annotations:
           summary: "P0 Postgres Streaming Replication Break: {{$labels.ins}}"
-          description: "delta = {{ $value }} {{$labels.ins}}"
+          description: "delta = {{ $value }} {{$labels.ins}} http://g.pigsty/d/pg_cluster/pg-cluster?var-cls={{$labels.cls}}&fullscreen&panelId=210"
 
       # replication lag greater than 8 second for 3m triggers a P1 alert
       - alert: PG_REPLICATION_LAG
@@ -79,7 +91,7 @@ groups:
           urgency: P1
         annotations:
           summary: "P1 Postgres Replication Lagged: {{$labels.ins}}"
-          description: "lag = {{ $value }} seconds, {{$labels.ins}}"
+          description: "lag = {{ $value }} seconds, {{$labels.ins}} http://g.pigsty/d/pg_cluster/pg-cluster?var-cls={{$labels.cls}}&fullscreen&panelId=29"
 
       # replication diff greater than 32MB for 5m triggers a P2 alert
       - alert: PG_REPLICATOIN_DIFF
@@ -89,7 +101,7 @@ groups:
           team: DBA
           urgency: P2
         annotations:
-          summary: "P2 Postgres Replication Diff Deviant: {{$labels.ins}}"
+          summary: "P2 Postgres Replication Diff Deviant: {{$labels.ins}} http://g.pigsty/d/pg_cluster/pg-cluster?var-cls={{$labels.cls}}&fullscreen&panelId=86"
           description: "delta = {{ $value }} {{$labels.ins}}"
 
 
@@ -130,7 +142,7 @@ groups:
 
       # 8 waiting clients for 1m triggers a P0 alert
       - alert: PGB_QUEUING
-        expr: sum(pgbouncer_pool_waiting_clients{datname!="pgbouncer"}) by (ins,datname) > 8
+        expr: pgb:ins:waiting_clients > 8
         for: 1m
         labels:
           team: DBA
@@ -142,7 +154,7 @@ groups:
 
       # num of backend exceed 90 for 3m
       - alert: PG_BACKEND_HIGH
-        expr: sum(pg_db_numbackends{}) by (ins) > 32
+        expr: pg:ins:numbackends > 10
         for: 3m
         labels:
           team: DBA
@@ -151,9 +163,9 @@ groups:
           summary: "P1 Postgres Backend Number High: {{$labels.ins}}"
           description: "numbackend = {{ $value }} {{$labels.ins}}"
 
-      # num of backend exceed 80 for 10m (avoid pgbouncer jam false alert)
+      # num of backend exceed 16 for 10m (avoid pgbouncer jam false alert)
       - alert: PG_BACKEND_WARN
-        expr: sum(pg_db_numbackends{}) by (ins) > 16
+        expr: pg:ins:numbackends > 5
         for: 10m
         labels:
           team: DBA
@@ -175,7 +187,7 @@ groups:
 
       # age wrap around (progress in half 10Y) triggers a P1 alert
       - alert: PG_AGE_HIGH
-        expr: pg_database_age{} > 1000000000
+        expr: pg:ins:age > 1000000000
         for: 1m
         labels:
           team: DBA
@@ -186,7 +198,7 @@ groups:
 
       # age wrap around (progress in half 10Y) triggers a P1 alert
       - alert: PG_AGE_WARN
-        expr: pg_database_age{} > 300000000
+        expr: pg:ins:age > 300000000
         for: 3m
         labels:
           team: DBA
@@ -198,7 +210,7 @@ groups:
       # TRAFFIC ALERTS
       # more than 30k TPS lasts for 1m triggers a P1 (pgbouncer bottleneck)
       - alert: PG_TPS_HIGH
-        expr: rate(pg_db_xact_total{}[1m]) > 30000
+        expr: pg:db:tps > 500
         for: 1m
         labels:
           team: DBA
@@ -209,7 +221,7 @@ groups:
 
       # more than 24k TPS lasts for 3m triggers a P2
       - alert: PG_TPS_WARN
-        expr: rate(pg_db_xact_total{}[1m]) > 200
+        expr: pg:db:tps > 300
         for: 3m
         labels:
           team: DBA
@@ -220,7 +232,7 @@ groups:
 
       # more than 4 rollback per seconds lasts for 5m
       - alert: PG_ROLLBACK_WARN
-        expr: rate(pg_db_xact_rollback{}[1m]) > 4
+        expr: pg:db:rollbacks > 500
         for: 5m
         labels:
           team: DBA

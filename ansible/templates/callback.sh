@@ -32,6 +32,8 @@ function on_role_change_handler() {
 	# change registered services with new role
 	/pg/bin/register.sh ${role} ${cluster}
 
+	psql -c 'CHECKPOINT;'
+
 	# TODO
 }
 

@@ -22,6 +22,7 @@ restapi:
 
 consul:
   host: 127.0.0.1:8500
+  register_service: false
 
 log:
   level: INFO
@@ -32,17 +33,32 @@ bootstrap:
   # and all other cluster members will use it as a `global configuration`
 
   dcs:
+
+    # IMPORTANT PARAMETERS
+    # constraint: ttl >= loop_wait + retry_timeout * 2
+
+    # the TTL to acquire the leader lock (in seconds). Think of it as the length of time before initiation of the automatic failover process. Default value: 30
     ttl: 30
-    loop_wait: 10
 
-    # important: if DCS is down more than this, primary will be demoted
-    retry_timeout: 300
+    # the number of seconds the loop will sleep. Default value: 10
+    loop_wait: 5
 
-    # import: candidate will not be promoted if replication lag is higher than this
-    maximum_lag_on_failover: 1048576
+    # timeout for DCS and PostgreSQL operation retries (in seconds). DCS or network issues shorter than this will not cause Patroni to demote the leader. Default value: 10
+    retry_timeout: 10
+
+    # the amount of time a master is allowed to recover from failures before failover is triggered (in seconds)
+    # Max RTO: 2 loop wait + master_start_timeout
     master_start_timeout: 300
 
+    # import: candidate will not be promoted if replication lag is higher than this
+    # maximum RPO: 1MB
+    maximum_lag_on_failover: 1048576
+
+    # turns on synchronous replication mode. In this mode a replica will be chosen as synchronous and only the latest leader and synchronous replica are able to participate in leader election
+    # set to true for RPO mode
     synchronous_mode: false
+
+    # prevents disabling synchronous replication if no synchronous replicas are available, blocking all client writes to the master
     synchronous_mode_strict: false
 
     postgresql:
@@ -183,8 +199,15 @@ postgresql:
   basebackup:
     max-rate: '100M'
 
+watchdog:
+  mode: automatic
+  device: /dev/watchdog
+
+
+
 tags:
   nofailover: false
+  clonefrom: true
   noloadbalance: false
-  clonefrom: false
   nosync: false
+  # replicatefrom: 10.10.10.12
