@@ -93,7 +93,9 @@ Default database cluster is named 'testdb'
 
 **DSN**
 
-Default database name: `testdb`, default business user is `dbuser_test` and password is `dbuser_test` too
+Default database name: `testdb`, default business user is `dbuser_test` and password is `dbuser_test` too.
+
+You can use DNS service discovery to connect to real server: 
 
 ```bash
 # connect to primary
@@ -101,6 +103,32 @@ psql postgres://dbuser_test:dbuser_test@primary.testdb.service.consul:5432/testd
 
 # conntect to standby (random choose one)
 psql postgres://dbuser_test:dbuser_test@standby.testdb.service.consul:5432/testdb
+```
+
+Or just go through L4 proxy haproxy on control node via VIP `testdb(10.10.10.2-> 10.10.10.10)`
+
+```bash
+# haproxy primary service (vip=testdb/10.10.10.2 port=5556)
+postgres://dbuser_test:dbuser_test@testdb:5555/testdb
+pgbench -nv -P1 -c4 -T1000 postgres://dbuser_test:dbuser_test@testdb:5555/testdb
+
+# haproxy standby service (vip=testdb/10.10.10.2 port=5556)
+postgres://dbuser_test:dbuser_test@testdb:5556/testdb
+```
+
+
+
+#### Generate some load
+
+```bash
+# init testdb pgbench
+pgbench -is10 postgres://dbuser_test:dbuser_test@testdb:5555/testdb
+
+# load on primary
+while true; do pgbench -nv -P1 -c2 -T10 postgres://dbuser_test:dbuser_test@testdb:5555/testdb; done
+
+# load on standby
+while true; do pgbench -nv -P1 -c4 -T10 --select-only postgres://dbuser_test:dbuser_test@testdb:5556/testdb; done
 ```
 
 
@@ -114,6 +142,23 @@ psql postgres://dbuser_test:dbuser_test@standby.testdb.service.consul:5432/testd
 * Add some load to cluster
 * Managing postgres cluster with ansible
 * [Patroni HA Drill](doc/patroni-ha.md)
+
+
+
+## Note
+
+Grafana Default Credential
+
+* username : admin
+* password : admin
+
+PgAdmin4 Require manaul bootstrap before launching
+
+```bash
+# do this on control node to setup pgadmin
+sudo /usr/bin/python2 /usr/lib/python2.7/site-packages/pgadmin4-web/pgAdmin4.py
+sudo systemctl restart pgadmin4
+```
 
 
 

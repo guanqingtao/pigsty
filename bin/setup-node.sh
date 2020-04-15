@@ -56,8 +56,10 @@ function setup_dns() {
 			10.10.10.10   p.pigsty
 			10.10.10.10   pg.pigsty
 			10.10.10.10   am.pigsty
+			10.10.10.10   ha.pigsty
 			10.10.10.10   yum.pigsty
-			
+
+
 			# physicla nodes
 			10.10.10.10   n0
 			10.10.10.11   n1
@@ -67,13 +69,13 @@ function setup_dns() {
 			10.10.10.11   node1
 			10.10.10.12   node2
 			10.10.10.13   node3
-			
+
 			# virtual IP
-			10.10.10.2   cluster.testdb
+			10.10.10.2   testdb
 			10.10.10.3   primary.testdb
 			10.10.10.4	 standby.testdb
 			10.10.10.5	 offline.testdb
-			
+
 			# biz cluster
 			10.10.10.10   1.metadb
 			10.10.10.11   1.testdb
@@ -147,6 +149,9 @@ function main() {
 		alias p="sudo su - postgres"
 		alias r="sudo su - root"
 		alias st="sudo ntpdate -u time.pool.aliyun.com"
+		alias ri="pgbench -is10 postgres://dbuser_test:dbuser_test@testdb:5555/testdb"
+		alias rw="while true; do pgbench -nv -P1 -c2 -T10 postgres://dbuser_test:dbuser_test@testdb:5555/testdb; done"
+		alias ro="while true; do pgbench -nv -P1 -c4 -T10 --select-only postgres://dbuser_test:dbuser_test@testdb:5556/testdb; done"
 	EOF
 	chmod 644 /home/vagrant/.bashrc
 	chown vagrant:vagrant /home/vagrant/.bashrc

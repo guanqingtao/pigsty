@@ -209,6 +209,13 @@ function write_nginx_files() {
 					proxy_pass http://localhost:9093/;
 				}
 			}
+			server {
+				listen       80;
+				server_name  ha.pigsty;
+				location / {
+					proxy_pass http://localhost:8000/;
+				}
+			}
 		EOF
 	fi
 
@@ -289,7 +296,7 @@ function yum_bootstrap() {
 	cp -rf /www/pigsty/boot/* .
 	yumdownloader -y --resolve \
 		ntp uuid readline lz4 nc pv jq vim bash libxml2 libxslt lsof wget unzip git zlib openssl openssl-libs bind-utils net-tools sysstat \
-		bind-utils net-tools sysstat dnsutils dnsmasq keepalived \
+		bind-utils net-tools sysstat dnsutils dnsmasq keepalived haproxy \
 		rpm-build rpm-devel rpmlint make bash coreutils diffutils patch rpmdevtools \
 		python python-pip python-ipython python2-psycopg2 ansible \
 		'postgresql12*' 'postgresql11*' 'postgresql10*' 'postgresql96*' \
@@ -410,10 +417,10 @@ function setup_control() {
 		yumcmd='yum install --disablerepo=* --enablerepo=pigsty'
 	fi
 	${yumcmd} -q -y \
-		prometheus2 alertmanager grafana consul etcd postgresql12 \
+		prometheus2 alertmanager grafana consul etcd postgresql12 postgresql12-server \
 		node_exporter pg_exporter consul_exporter nginx_exporter \
 		python-pip python-ipython python2-psycopg2 ansible \
-		ntp lz4 nc jq pv git bind-utils net-tools sysstat dnsutils pgadmin4 dnsmasq
+		ntp lz4 nc jq pv git bind-utils net-tools sysstat dnsutils pgadmin4 dnsmasq haproxy keepalived
 
 	# setup postgresql tools
 	ln -s /usr/pgsql-12 /usr/pgsql
@@ -470,8 +477,6 @@ function setup_control() {
 		chown -R vagrant:vagrant /home/vagrant/ansible
 	fi
 
-	# setup pgadmin4
-
 	# setup dnsmasq
 	cat >/etc/dnsmasq.d/config <<-'EOF'
 		port=53
@@ -479,11 +484,25 @@ function setup_control() {
 		server=/consul/127.0.0.1#8600
 	EOF
 
+	# setup keepalived
+	if [[ -f /vagrant/control/keepalived.conf ]]; then
+		cp -f /vagrant/control/keepalived.conf /etc/keepalived/keepalived.conf
+	fi
+	systemctl start keepalived
+
+	# setup haproxy
+	if [[ -f /vagrant/control/haproxy.cfg ]]; then
+		cp -f /vagrant/control/haproxy.cfg /etc/haproxy/haproxy.cfg
+	fi
+	systemctl start haproxy
+
 	# launch services
 	systemctl daemon-reload
 	systemctl enable ntpd
 	systemctl enable consul
 	systemctl enable dnsmasq
+	systemctl enable haproxy
+	systemctl enable keepalived
 	systemctl enable prometheus
 	systemctl enable alertmanager
 	systemctl enable grafana-server
@@ -494,6 +513,15 @@ function setup_control() {
 	systemctl start prometheus
 	systemctl start alertmanager
 	systemctl start grafana-server
+
+	# setup pgadmin4 (this stupid software is broken ,require manual setup)
+	pip2 install flask_compress
+	if [[ -f /vagrant/control/pgadmin4.db ]]; then
+		cp -f /vagrant/control/pgadmin4.db /etc/haproxy/pgadmin4.db
+	fi
+	systemctl enable pgadmin4
+	systemctl start pgadmin4
+
 }
 
 #--------------------------------------------------------------#
@@ -525,3 +553,6 @@ function main() {
 }
 
 main $@
+
+sleep 15
+systemctl restart haproxy

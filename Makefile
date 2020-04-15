@@ -77,5 +77,8 @@ prom:
 dump-monitor:
 	scp node0:/var/lib/grafana/grafana.db control/grafana/grafana.db
 
+dump-pgadmin:
+	ssh node0 "sudo cp /var/lib/pgadmin/pgadmin4.db /tmp/pgadmin4.db;sudo chmod a+r /tmp/pgadmin4.db"
+	scp node0:/tmp/pgadmin4.db control/pgadmin4.db
 
 .PHONY: new dns ssh status up suspend halt resume clean cache control sync-time sync-playbook yum-cache download download-yum init initdb deploy test view prom dump-monitor

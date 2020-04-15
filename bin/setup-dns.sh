@@ -47,8 +47,10 @@ function setup_dns() {
 		10.10.10.10   p.pigsty
 		10.10.10.10   pg.pigsty
 		10.10.10.10   am.pigsty
+		10.10.10.10   ha.pigsty
 		10.10.10.10   yum.pigsty
-		
+		10.10.10.10   testdb
+
 	EOF
 
 	if [[ $? != 0 ]]; then
